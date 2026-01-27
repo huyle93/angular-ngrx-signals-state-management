@@ -1,0 +1,166 @@
+# Copilot Instructions for Angular NgRx Signals State Management
+
+## Project Overview
+
+This is a cutting-edge Angular monorepo demonstrating modern state management with Signals and NgRx. All code must follow the latest Angular best practices and modern patterns.
+
+## Workspace Structure
+
+- **Nx Monorepo**: Apps in `apps/`, shared libraries in `libs/`
+- **Angular 21.1.1**: Latest version with Signal Forms and zoneless support
+- **TypeScript 5.9.3**: Strict mode enabled
+- **Testing**: Vitest with @nx/vitest inferred tasks
+
+## Core Principles
+
+### 1. Angular Architecture
+
+- **Standalone Components Only**: Never use NgModules
+- **Zoneless Angular**: Always use `provideZonelessChangeDetection()` in app.config.ts
+- **OnPush Change Detection**: All components must use `ChangeDetectionStrategy.OnPush`
+- **Signal-Based Reactivity**: Use `signal()`, `computed()`, `effect()` for all state management
+
+### 2. Modern Syntax
+
+- **Control Flow**: Use `@if`, `@for`, `@switch` - never `*ngIf`, `*ngFor`, `*ngSwitch`
+- **Signals**: Prefer signals over observables for local state
+- **Typed Forms**: When forms are needed, use Angular's typed forms
+
+### 3. Component Patterns
+
+```typescript
+import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+
+@Component({
+  selector: 'app-example',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (isLoading()) {
+      <p>Loading...</p>
+    } @else {
+      <h1>{{ title() }}</h1>
+    }
+  `,
+})
+export class ExampleComponent {
+  // Use signals for reactive state
+  protected readonly count = signal(0);
+  protected readonly doubled = computed(() => this.count() * 2);
+  
+  protected increment() {
+    this.count.update(c => c + 1);
+  }
+}
+```
+
+### 4. State Management
+
+- **Local State**: Use `signal()` and `computed()`
+- **Component State**: Keep state close to where it's used
+- **Shared State**: Will use NgRx Store (to be implemented)
+- **Async State**: Use `toSignal()` from `@angular/core/rxjs-interop`
+
+### 5. Testing
+
+- **Framework**: Vitest, not Jest
+- **Location**: Co-located `.spec.ts` files
+- **Setup**: Use Angular TestBed with zoneless setup in `test-setup.ts`
+- **Pattern**: Arrange-Act-Assert
+
+```typescript
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+
+describe('ExampleComponent', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ExampleComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+  });
+
+  it('should create', () => {
+    const fixture = TestBed.createComponent(ExampleComponent);
+    const component = fixture.componentInstance;
+    expect(component).toBeTruthy();
+  });
+});
+```
+
+### 6. File Structure
+
+```
+apps/web-app/
+├── src/
+│   ├── app/
+│   │   ├── app.ts              # Root component
+│   │   ├── app.config.ts       # App configuration with zoneless
+│   │   ├── app.routes.ts       # Route configuration
+│   │   ├── feature.component.ts
+│   │   └── feature.component.spec.ts
+│   ├── main.ts
+│   └── test-setup.ts
+├── project.json
+├── tsconfig.json
+└── vite.config.ts
+```
+
+### 7. Naming Conventions
+
+- Components: `example.component.ts` (lowercase, no barrel files)
+- Tests: `example.component.spec.ts`
+- Routes: `app.routes.ts`
+- Config: `app.config.ts`
+
+### 8. Imports
+
+- Always use standalone: `imports: [CommonModule, FormsModule]` in component decorator
+- Use proper paths from tsconfig
+- Group imports: Angular, third-party, local
+
+### 9. Styling
+
+- Use SCSS
+- Component styles co-located
+- Use `:host` selector for component root styling
+
+### 10. Code Quality
+
+- Prefer `protected readonly` for component properties exposed to templates
+- Use TypeScript strict mode
+- No `any` types
+- Implement proper error handling
+- Keep components focused and small
+
+## What NOT to Do
+
+❌ Don't use NgModules
+❌ Don't use `*ngIf`, `*ngFor`, `*ngSwitch`
+❌ Don't use Jest (use Vitest)
+❌ Don't use zone.js change detection
+❌ Don't use Default change detection strategy
+❌ Don't use barrel index files
+❌ Don't mutate signals directly (use `.set()` or `.update()`)
+
+## When to Use What
+
+- **`signal()`**: Writable state that can change
+- **`computed()`**: Derived values from signals
+- **`effect()`**: Side effects based on signal changes (use sparingly)
+- **`toSignal()`**: Convert observables to signals
+- **`input()`**: Component inputs as signals (Angular 21+)
+- **`output()`**: Component outputs (Angular 21+)
+
+## Current Implementation Status
+
+✅ Zoneless Angular configured
+✅ Vitest testing setup
+✅ Three demo components: Home, Counter, Todo
+✅ Signal-based state management examples
+🚧 NgRx Store integration (planned)
+🚧 Shared state libraries (planned)
+
+## Remember
+
+This repository demonstrates **modern, cutting-edge Angular**. Always prefer the newest APIs and patterns. Check Angular 21 documentation for the latest features.
