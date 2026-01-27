@@ -5,7 +5,7 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
   root: __dirname,
-  cacheDir: '../node_modules/.vite/web-app',
+  cacheDir: '../../node_modules/.vite/apps-web-app',
   
   plugins: [
     angular(),
@@ -19,7 +19,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../coverage/web-app',
+      reportsDirectory: '../../coverage/apps/web-app',
       provider: 'v8',
     },
   },

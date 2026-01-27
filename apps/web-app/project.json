@@ -1,26 +1,26 @@
 {
   "name": "web-app",
-  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "web-app/src",
+  "sourceRoot": "apps/web-app/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/web-app",
-        "browser": "web-app/src/main.ts",
-        "tsConfig": "web-app/tsconfig.app.json",
+        "outputPath": "dist/apps/web-app",
+        "browser": "apps/web-app/src/main.ts",
+        "tsConfig": "apps/web-app/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "web-app/public"
+            "input": "apps/web-app/public"
           }
         ],
-        "styles": ["web-app/src/styles.scss"]
+        "styles": ["apps/web-app/src/styles.scss"]
       },
       "configurations": {
         "production": {
@@ -66,8 +66,8 @@
       "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "config": "web-app/vite.config.ts",
-        "reportsDirectory": "../coverage/web-app"
+        "config": "apps/web-app/vite.config.ts",
+        "reportsDirectory": "../../coverage/apps/web-app"
       }
     },
     "serve-static": {
@@ -75,7 +75,7 @@
       "executor": "@nx/web:file-server",
       "options": {
         "buildTarget": "web-app:build",
-        "staticFilePath": "dist/web-app/browser",
+        "staticFilePath": "dist/apps/web-app/browser",
         "spa": true
       }
     }

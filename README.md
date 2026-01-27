@@ -10,9 +10,23 @@ This is an Nx workspace that demonstrates state management in Angular using NgRx
 
 This project uses [Nx](https://nx.dev) for monorepo management with the following structure:
 
-- **apps/**: Contains Angular applications (currently in development)
-- **libs/**: Contains shared libraries and reusable code (to be added)
-- **web-app/**: Desktop web application showcasing modern Angular state management
+```
+angular-ngrx-signals-state-management/
+├── apps/
+│   └── web-app/              # Desktop web application
+│   └── mobile-app/           # Mobile application (planned)
+├── libs/
+│   ├── web-app/              # Shared libraries for web-app (planned)
+│   └── mobile-app/           # Shared libraries for mobile-app (planned)
+├── node_modules/
+├── tsconfig.base.json
+├── nx.json
+└── package.json
+```
+
+**Key Directories:**
+- **apps/**: Application projects (web, mobile)
+- **libs/**: Shared libraries and reusable code organized by application
 
 ## Technology Stack
 
@@ -28,7 +42,7 @@ This project uses [Nx](https://nx.dev) for monorepo management with the followin
 
 - **Signals**: Angular's modern reactivity system (`signal()`, `computed()`)
 - **NgRx Store**: Redux-inspired state management (to be added)
-- **Zoneless Angular**: Uses `provideExperimentalZonelessChangeDetection()` for better performance
+- **Zoneless Angular**: Uses `provideZonelessChangeDetection()` for better performance
 
 ### Testing & Quality
 
