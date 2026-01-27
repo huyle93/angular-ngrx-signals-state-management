@@ -1,0 +1,46 @@
+{
+  "name": "angular-ngrx-signals-state-management",
+  "version": "1.0.0",
+  "description": "This is an Nx workspace that demonstrates state management in Angular using NgRx with Signals.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huyle93/angular-ngrx-signals-state-management.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/huyle93/angular-ngrx-signals-state-management/issues"
+  },
+  "homepage": "https://github.com/huyle93/angular-ngrx-signals-state-management#readme",
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^21.1.1",
+    "@angular-devkit/core": "^21.1.1",
+    "@angular-devkit/schematics": "^21.1.1",
+    "@angular/cli": "^21.1.1",
+    "@angular/compiler-cli": "^21.1.1",
+    "@nx/angular": "^22.4.2",
+    "@nx/eslint": "^22.4.2",
+    "@nx/jest": "^22.4.2",
+    "@nx/workspace": "^22.4.2",
+    "eslint": "^9.39.2",
+    "nx": "22.4.2",
+    "typescript": "^5.9.3"
+  },
+  "nx": {},
+  "dependencies": {
+    "@angular/common": "^21.1.1",
+    "@angular/core": "^21.1.1",
+    "@angular/platform-browser": "^21.1.1",
+    "@angular/platform-browser-dynamic": "^21.1.1",
+    "@angular/router": "^21.1.1",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "zone.js": "^0.16.0"
+  }
+}
