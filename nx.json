@@ -3,16 +3,6 @@
   "nxCloudId": "6978120030a74f47f2e6fc45",
   "plugins": [
     {
-      "plugin": "@nx/vite/plugin",
-      "options": {
-        "buildTargetName": "build",
-        "testTargetName": "test",
-        "serveTargetName": "serve",
-        "previewTargetName": "preview",
-        "serveStaticTargetName": "serve-static"
-      }
-    },
-    {
       "plugin": "@nx/vitest/plugin",
       "options": {
         "targetName": "test"
