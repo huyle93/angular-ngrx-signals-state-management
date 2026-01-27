@@ -63,11 +63,11 @@
       "executor": "@nx/eslint:lint"
     },
     "test": {
-      "executor": "@nx/jest:jest",
+      "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "web-app/jest.config.cts",
-        "tsConfig": "web-app/tsconfig.spec.json"
+        "config": "web-app/vite.config.ts",
+        "reportsDirectory": "../coverage/web-app"
       }
     },
     "serve-static": {
