@@ -1,6 +1,6 @@
 # angular-ngrx-signals-state-management
 
-This is an Nx workspace that demonstrates state management in Angular using NgRx with Signals.
+This is an Nx workspace that demonstrates state management in Angular using NgRx with Signals. This repository serves the purpose of experimental, educational, demo playground for exploring state management techniques, best-practices, and patterns in Angular applications.
 
 ## Workspace Structure
 
