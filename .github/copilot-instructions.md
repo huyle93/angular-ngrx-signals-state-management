@@ -152,15 +152,47 @@ apps/web-app/
 - **`input()`**: Component inputs as signals (Angular 21+)
 - **`output()`**: Component outputs (Angular 21+)
 
+## Documentation Structure
+
+### docs/ Directory (Human Learning)
+
+The `docs/` directory contains comprehensive documentation for **human developers** to learn concepts and understand architectural decisions:
+
+- **docs/concepts/**: Core concepts (Signals, Zoneless Angular, OnPush, etc.)
+- **docs/guides/**: Step-by-step tutorials and how-to guides
+- **docs/patterns/**: Reusable state management patterns and best practices
+- **docs/decisions/**: Architectural Decision Records (ADR) explaining technical choices
+
+**When to reference docs/:**
+- When a user asks "what is..." or "why do we..." → Point them to relevant concept or decision doc
+- When explaining architectural rationale → Reference the appropriate ADR
+- When teaching patterns → Link to pattern documentation
+
+### .github/ Directory (AI Instructions)
+
+This directory (where this file lives) contains instructions for **AI code generation**:
+
+- **copilot-instructions.md**: Auto-applied coding standards (this file)
+- **skills/\*/SKILL.md**: Agent skills for specific tasks (create components, add tests)
+- **prompts/\*.prompt.md**: Reusable prompts for common workflows
+- **agents/\*.agent.md**: Custom agents for specialized workflows (planned)
+- **instructions/\*.instructions.md**: Additional context-specific instructions (planned)
+
+**Key Difference**: `docs/` teaches concepts and reasoning; `.github/` provides code generation rules.
+
 ## Current Implementation Status
 
 ✅ Zoneless Angular configured
 ✅ Vitest testing setup
 ✅ Three demo components: Home, Counter, Todo
 ✅ Signal-based state management examples
+✅ Documentation structure (docs/) for human learning
+✅ GitHub Copilot workspace features configured
 🚧 NgRx Store integration (planned)
 🚧 Shared state libraries (planned)
 
 ## Remember
 
 This repository demonstrates **modern, cutting-edge Angular**. Always prefer the newest APIs and patterns. Check Angular 21 documentation for the latest features.
+
+When users ask conceptual questions, guide them to the `docs/` directory. When generating code, follow the patterns defined in this file and the `.github/skills/` directory.

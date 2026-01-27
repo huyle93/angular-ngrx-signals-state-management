@@ -12,21 +12,72 @@ This project uses [Nx](https://nx.dev) for monorepo management with the followin
 
 ```
 angular-ngrx-signals-state-management/
-├── apps/
-│   └── web-app/              # Desktop web application
-│   └── mobile-app/           # Mobile application (planned)
-├── libs/
-│   ├── web-app/              # Shared libraries for web-app (planned)
-│   └── mobile-app/           # Shared libraries for mobile-app (planned)
-├── node_modules/
-├── tsconfig.base.json
-├── nx.json
-└── package.json
+├── .github/                           # GitHub and Copilot configuration
+│   ├── copilot-instructions.md        # Auto-applied AI coding standards
+│   ├── agents/                        # Custom Copilot agents (planned)
+│   ├── instructions/                  # Additional AI instructions (planned)
+│   ├── prompts/                       # Reusable Copilot prompts
+│   │   ├── create-demo.prompt.md
+│   │   └── refactor-to-signals.prompt.md
+│   └── skills/                        # Copilot Agent Skills
+│       ├── add-vitest-tests/
+│       │   └── SKILL.md
+│       └── create-signal-component/
+│           └── SKILL.md
+├── .vscode/                           # VS Code workspace settings
+│   └── mcp.json                       # Model Context Protocol config
+├── apps/                              # Application projects
+│   └── web-app/                       # Desktop web application
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── app.ts             # Root component
+│       │   │   ├── app.config.ts      # Zoneless config
+│       │   │   ├── app.routes.ts      # Route definitions
+│       │   │   ├── counter.component.ts
+│       │   │   ├── home.component.ts
+│       │   │   └── todo.component.ts
+│       │   ├── assets/                # Static assets
+│       │   ├── main.ts                # Application entry point
+│       │   └── test-setup.ts          # Vitest test configuration
+│       ├── project.json               # Nx project configuration
+│       ├── tsconfig.json              # TypeScript base config
+│       ├── tsconfig.app.json          # App-specific TS config
+│       ├── tsconfig.spec.json         # Test-specific TS config
+│       └── vite.config.ts             # Vite and Vitest config
+├── docs/                              # Human-readable documentation
+│   ├── README.md                      # Documentation overview
+│   ├── concepts/                      # Core concepts explained
+│   ├── guides/                        # Step-by-step tutorials
+│   ├── patterns/                      # State management patterns
+│   └── decisions/                     # Architectural Decision Records
+├── libs/                              # Shared libraries (planned)
+│   ├── web-app/                       # Shared code for web-app
+│   └── mobile-app/                    # Shared code for mobile-app
+├── node_modules/                      # Dependencies
+├── .gitignore                         # Git ignore rules
+├── nx.json                            # Nx workspace configuration
+├── package.json                       # Dependencies and scripts
+├── package-lock.json                  # Locked dependency versions
+├── README.md                          # This file
+└── tsconfig.base.json                 # Base TypeScript configuration
 ```
 
 **Key Directories:**
-- **apps/**: Application projects (web, mobile)
-- **libs/**: Shared libraries and reusable code organized by application
+
+- **.github/**: GitHub Copilot workspace features - AI instructions, skills, prompts for code generation
+- **.vscode/**: VS Code configuration including Model Context Protocol (MCP) server setup
+- **apps/**: Application projects (web, mobile) - each app is independently deployable
+- **apps/web-app/src/app/**: Angular components and application logic
+- **docs/**: Human-readable documentation - concepts, guides, patterns, and architectural decisions
+- **libs/**: Shared libraries and reusable code organized by application (planned)
+
+**File Types:**
+
+- **\*.ts**: TypeScript source files (components, services, configuration)
+- **\*.spec.ts**: Vitest test files (co-located with source files)
+- **\*.config.ts**: Configuration files (app.config.ts, vite.config.ts)
+- **\*.json**: Configuration files (project.json, tsconfig.json, nx.json)
+- **\*.md**: Markdown documentation (README, docs/, .github/)
 
 ## Technology Stack
 
