@@ -44,4 +44,4 @@ Thumbs.db
 
 # Nx
 .nx/cache
-node_modules
+.nx/workspace-data
