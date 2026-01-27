@@ -1,6 +1,6 @@
 ---
-description: Creates a new demo component showcasing a state management pattern
----
+description: Creates a new demo component showcasing a state management patternagent: agent
+tools: ['search', 'codebase']---
 
 # Create Demo Component
 

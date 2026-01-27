@@ -1,5 +1,7 @@
 ---
 description: Refactors an existing component to use modern signal-based patterns
+agent: edit
+tools: ['search', 'codebase']
 ---
 
 # Refactor Component to Signals
