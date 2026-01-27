@@ -1,0 +1,54 @@
+{
+  "version": "6.0",
+  "nxVersion": "22.4.2",
+  "pathMappings": {},
+  "nxJsonPlugins": [],
+  "fileMap": {
+    "nonProjectFiles": [],
+    "projectFileMap": {
+      "angular-ngrx-signals-state-management": [
+        {
+          "file": ".eslintrc.json",
+          "hash": "17866138117546000433"
+        },
+        {
+          "file": ".gitignore",
+          "hash": "15403802109618750776"
+        },
+        {
+          "file": "README.md",
+          "hash": "1820044262381866015"
+        },
+        {
+          "file": "apps/.gitkeep",
+          "hash": "423568115103297777"
+        },
+        {
+          "file": "libs/.gitkeep",
+          "hash": "16348984225646975912"
+        },
+        {
+          "file": "nx.json",
+          "hash": "11841153998563725928"
+        },
+        {
+          "file": "package-lock.json",
+          "hash": "9914133083975955948"
+        },
+        {
+          "file": "package.json",
+          "hash": "6653043054554393924"
+        },
+        {
+          "file": "tsconfig.base.json",
+          "hash": "268346212044042634"
+        },
+        {
+          "file": "tsconfig.json",
+          "hash": "1369236836100885247"
+        }
+      ]
+    }
+  },
+  "externalNodesHash": "15168440163025673470"
+}

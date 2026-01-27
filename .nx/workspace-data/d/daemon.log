@@ -1,0 +1,117 @@
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.030Z - [Client] Starting new daemon server in background
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.031Z - [Client] Waiting for server (max: 6000 attempts, 10ms interval)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.124Z - New daemon starting from: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/daemon/server/server.js
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.125Z - New daemon __dirname: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/daemon/server
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.125Z - New daemon nxVersion: 22.4.2
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.125Z - New daemon getInstalledNxVersion(): 22.4.2
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.126Z - [Server] Starting outdated check interval (20ms)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.127Z - Started listening on: /private/var/folders/hb/2c8s4h2s4yz3b9f329kq8crh0000gn/T/c9db33cc7de9289bd265/d.sock
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.128Z - [WATCHER]: Subscribed to changes within: /Users/huyle/Code/community/angular-ngrx-signals-state-management (native)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.129Z - [NX-CONSOLE]: Pulling latest Nx (latest) to check console status...
+Fetching nx...
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.130Z - [Client] Server available after 9 attempts
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.130Z - [Client] Daemon server started, pid=19837
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.131Z - [Messenger] Setting up socket listeners
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.131Z - [Messenger] listen() complete
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.131Z - [Messenger] Sending message type: REQUEST_PROJECT_GRAPH
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.131Z - [Messenger] Message sent
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.201Z - Established a connection. Number of open connections: 1
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.202Z - Established a connection. Number of open connections: 2
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.202Z - Closed a connection. Number of open connections: 1
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.202Z - Received raw message of length 32
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.202Z - Received json message of type REQUEST_PROJECT_GRAPH
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.202Z - [REQUEST]: Client Request for Project Graph Received
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.205Z - Time taken for 'loadSpecifiedNxPlugins' 1.3516659999999945ms
+Time for 'plugin worker 19842 code loading' 2.044832999999999
+Time for 'plugin worker 19843 code loading' 1.8847919999999991
+Time for 'plugin worker 19844 code loading' 1.9489590000000003
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.311Z - Time taken for 'Load Nx Plugin: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/plugins/package-json' 107.68975000000003ms
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.315Z - Time taken for 'Load Nx Plugin: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/plugins/project-json/build-nodes/project-json' 111.784459ms
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.318Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.318Z - [REQUEST]: 
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.318Z - [REQUEST]: 
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.318Z - No files changed, but no in-memory cached project graph found. Recomputing it...
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.320Z - Time taken for 'loadDefaultNxPlugins' 114.79600000000002ms
+Time for 'nx/core/project-json:createNodes' 0.09775000000000489
+Time for 'nx/core/package-json:createNodes' 1.2943750000000023
+Time for 'nx/js/dependencies-and-lockfile:createNodes' 10.138083999999992
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.349Z - Time taken for 'build-project-configs' 19.059458000000006ms
+Time for 'build typescript dependencies' 2.729666000000009
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.378Z - [SYNC]: collect registered sync generators
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.380Z - Wrote project graph cache to /Users/huyle/Code/community/angular-ngrx-signals-state-management/.nx/workspace-data/project-graph.json
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.380Z - Serializing response for REQUEST_PROJECT_GRAPH message in json mode
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.380Z - Responding to REQUEST_PROJECT_GRAPH message
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.380Z - [REQUEST]: Responding to the client. project-graph
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.380Z - Time taken for 'total for creating and serializing project graph' 177.48854199999997ms
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.382Z - Done responding to the client project-graph
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.382Z - Handled json message REQUEST_PROJECT_GRAPH. Handling time: 178. Response time: 2.
+[NX v22.4.2 Daemon Client] - 2026-01-27T01:19:45.382Z - [Messenger] Received message, length: 687747
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.593Z - Established a connection. Number of open connections: 2
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.596Z - Closed a connection. Number of open connections: 1
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:45.602Z - Closed a connection. Number of open connections: 0
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:46.348Z - [NX-CONSOLE]: Successfully pulled latest Nx to /private/var/folders/hb/2c8s4h2s4yz3b9f329kq8crh0000gn/T/tmp-19837-J7Y6BrU7Cghy
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:46.389Z - [NX-CONSOLE]: Using local implementation (NX_USE_LOCAL=true or inner call)
+DEBUG nx::native::ide::install: Detected editor: VSCode
+DEBUG nx::native::ide::install: Checking if Nx Console extension is installed with: code --list-extensions
+DEBUG nx::native::ide::install: Nx Console extension is not installed
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:46.626Z - [NX-CONSOLE]: Console status check completed, shouldPrompt: true
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.195Z - [WATCHER]: Processing file changes in outputs
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.196Z - [WATCHER]: package.json was modified
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.196Z - [SYNC]: clearing sync generators cache due to file changes
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.297Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.297Z - [REQUEST]: package.json
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.297Z - [REQUEST]: 
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.298Z - Time taken for 'hash changed files from watcher' 0.05999999999949068ms
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.298Z - [Server] lock file hash changed! old=4306314221663298389, new=6413571008410612011
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.298Z - [Server] Daemon outdated: LOCK_FILES_CHANGED
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.298Z - [Server] Restarting daemon...
+Time for 'nx/core/project-json:createNodes' 0.06850000000031287
+Time for 'nx/core/package-json:createNodes' 0.49337500000001455
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.299Z - Restarting daemon with script: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/daemon/server/start.js
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.299Z - Old daemon __dirname: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/daemon/server
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.299Z - Current process.execPath: /Users/huyle/.nvm/versions/node/v24.11.0/bin/node
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.299Z - Started new daemon process in background
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.300Z - [WATCHER]: Stopping the watcher for /Users/huyle/Code/community/angular-ngrx-signals-state-management (sources)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.300Z - [WATCHER]: Stopping the watcher for /Users/huyle/Code/community/angular-ngrx-signals-state-management (outputs)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.300Z - [NX-CONSOLE]: Cleaning up latest Nx installation from /private/var/folders/hb/2c8s4h2s4yz3b9f329kq8crh0000gn/T/tmp-19837-J7Y6BrU7Cghy
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.300Z - Server stopped because: "LOCK_FILES_CHANGED"
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.413Z - New daemon starting from: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/daemon/server/server.js
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.414Z - New daemon __dirname: /Users/huyle/Code/community/angular-ngrx-signals-state-management/node_modules/nx/src/daemon/server
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.414Z - New daemon nxVersion: 22.4.2
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.414Z - New daemon getInstalledNxVersion(): 22.4.2
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.415Z - [Server] Starting outdated check interval (20ms)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.416Z - Started listening on: /private/var/folders/hb/2c8s4h2s4yz3b9f329kq8crh0000gn/T/331381b7c0fa056395b2/d.sock
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.416Z - [WATCHER]: Subscribed to changes within: /Users/huyle/Code/community/angular-ngrx-signals-state-management (native)
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.417Z - [NX-CONSOLE]: Pulling latest Nx (latest) to check console status...
+Fetching nx...
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.507Z - [WATCHER]: Processing file changes in outputs
+Time for 'plugin worker 20380 code loading' 3.2321670000000005
+Time for 'plugin worker 20381 code loading' 2.339708
+Time for 'plugin worker 20383 code loading' 2.1346250000000015
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.655Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.655Z - [REQUEST]: 
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.655Z - [REQUEST]: 
+Time for 'nx/core/project-json:createNodes' 0.11016700000000412
+Time for 'nx/core/package-json:createNodes' 1.272915999999995
+Time for 'nx/js/dependencies-and-lockfile:createNodes' 4.881709000000001
+Time for 'build typescript dependencies' 2.8299590000000023
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:53.718Z - [SYNC]: collect registered sync generators
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:54.691Z - [NX-CONSOLE]: Successfully pulled latest Nx to /private/var/folders/hb/2c8s4h2s4yz3b9f329kq8crh0000gn/T/tmp-20277-bfT4opsuaiZM
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:54.733Z - [NX-CONSOLE]: Using local implementation (NX_USE_LOCAL=true or inner call)
+DEBUG nx::native::ide::install: Detected editor: VSCode
+DEBUG nx::native::ide::install: Checking if Nx Console extension is installed with: code --list-extensions
+DEBUG nx::native::ide::install: Nx Console extension is not installed
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:19:54.959Z - [NX-CONSOLE]: Console status check completed, shouldPrompt: true
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.037Z - [WATCHER]: README.md was modified
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.037Z - [SYNC]: clearing sync generators cache due to file changes
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.038Z - [WATCHER]: Processing file changes in outputs
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.238Z - [REQUEST]: Updated workspace context based on watched changes, recomputing project graph...
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.239Z - [REQUEST]: README.md
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.239Z - [REQUEST]: 
+Time for 'nx/core/project-json:createNodes' 0.21020899999712128
+Time for 'nx/core/package-json:createNodes' 1.2591670000037993
+Time for 'nx/js/dependencies-and-lockfile:createNodes' 9.76104199999827
+Time for 'build typescript dependencies' 3.845499999995809
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.282Z - [SYNC]: collect registered sync generators
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.283Z - [SYNC]: project graph hash is the same, not collecting task sync generators
+[NX v22.4.2 Daemon Server] - 2026-01-27T01:20:40.283Z - [SYNC]: nx.json hash is the same, not collecting global sync generators

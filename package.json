@@ -28,6 +28,8 @@
     "@nx/eslint": "^22.4.2",
     "@nx/jest": "^22.4.2",
     "@nx/workspace": "^22.4.2",
+    "@swc-node/register": "^1.11.1",
+    "@swc/core": "^1.15.10",
     "eslint": "^9.39.2",
     "nx": "22.4.2",
     "typescript": "^5.9.3"
