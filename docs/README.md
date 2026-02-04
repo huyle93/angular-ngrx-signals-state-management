@@ -8,6 +8,13 @@ This documentation is designed for **human learning** and provides in-depth expl
 
 ## Documentation Structure
 
+### Docs folder purpose
+- All docs are shared for more than just this repository as this is an experimental, research, demo repository.
+- The docs includes for human reading, AI coding assistance like vscode copilot, coding agents, etc.
+- The docs are not only for this repository but also for other repositories, so avoid repository-specific details.
+- The docs are not for code generation instructions, those belong in the `.github/` folder.
+- The docs may include setup for other repositories, avoid repository-specific setup.
+
 ### 📚 [Concepts](./concepts/)
 
 Core concepts and technologies used in this project:
