@@ -1,19 +1,24 @@
-# NgRx SignalStore - CoE Talk Outline
+# NgRx SignalStore and Angular Signals -- Presenter Reference
 
-20-minute talk for engineers joining new development.
+Evergreen reference for presenting, teaching, or advocating NgRx SignalStore and Angular Signals.
+Use as a quick-access index before any talk, workshop, code review, or mentoring session.
 
 ---
 
-## Talk Structure
+## Fundamentals Index
 
-| Section | Time | File |
-|---------|------|------|
-| 1. Mental Model Shift | 5 min | [01-mental-model.md](./fundamentals/01-mental-model.md) |
-| 2. Store Anatomy | 3 min | [02-store-anatomy.md](./fundamentals/02-store-anatomy.md) |
-| 3. State and Computed | 3 min | [03-state-and-computed.md](./fundamentals/03-state-and-computed.md) |
-| 4. Methods and Async | 4 min | [04-methods-and-async.md](./fundamentals/04-methods-and-async.md) |
-| 5. Architecture Rules | 3 min | [05-architecture-rules.md](./fundamentals/05-architecture-rules.md) |
-| 6. Q&A | 2 min | - |
+Core topics, ordered for progressive teaching. Each file stands alone for targeted deep dives.
+
+| # | Topic | File | Summary |
+|---|-------|------|---------|
+| 1 | Mental Model Shift | [01-mental-model.md](./fundamentals/01-mental-model.md) | Redux vs SignalStore paradigm shift |
+| 2 | Store Anatomy | [02-store-anatomy.md](./fundamentals/02-store-anatomy.md) | withState, withComputed, withMethods, withHooks |
+| 3 | State and Computed | [03-state-and-computed.md](./fundamentals/03-state-and-computed.md) | Writable vs derived, patchState, computed |
+| 4 | Methods and Async | [04-methods-and-async.md](./fundamentals/04-methods-and-async.md) | rxMethod, signalMethod, tapResponse |
+| 5 | Architecture Rules | [05-architecture-rules.md](./fundamentals/05-architecture-rules.md) | Ownership, boundaries, naming conventions |
+| 6 | Error Handling | [06-error-handling.md](./fundamentals/06-error-handling.md) | Inline, CSF, named slices |
+| 7 | Events and Side Effects | [07-events-and-side-effects.md](./fundamentals/07-events-and-side-effects.md) | Component effect, store injection, Events plugin |
+| 8 | Angular effect() | [08-effect.md](./fundamentals/08-effect.md) | When to use, pitfalls, SignalStore integration |
 
 ---
 
@@ -26,17 +31,19 @@
 - Derived state is first-class (computed signals)
 - Ownership matters: who owns this state?
 - Reset is a first-class concern
+- effect() is a last resort -- prefer computed() and linkedSignal()
 
-### For Leadership
+### Business Value
 
-- Less ceremony, faster onboarding
-- Local reasoning per domain (easier code review)
+- Less ceremony, faster onboarding for new team members
+- Local reasoning per domain (easier code review, fewer merge conflicts)
 - Better Angular alignment (signals are Angular's future)
-- Cleaner Nx boundaries (store per domain)
+- Cleaner Nx boundaries (store per domain, enforced by lint rules)
+- Smaller bundle size vs full Redux setup
 
 ---
 
-## Flow Diagrams to Show
+## Flow Diagrams
 
 ### Redux Flow
 
@@ -60,21 +67,21 @@ UI -> store.method() -> patchState -> computed -> UI
 
 ---
 
-## Concrete Example: Load Portfolio Positions
+## Example Walkthrough: Load a Collection
 
 ### Redux Way
 
-1. Dispatch `LoadPositions`
+1. Dispatch `LoadItems`
 2. Effect calls API
-3. Dispatch `LoadPositionsSuccess`
-4. Reducer updates positions
-5. Selector returns positions
+3. Dispatch `LoadItemsSuccess`
+4. Reducer updates items
+5. Selector returns items
 
 ### SignalStore Way
 
-1. UI calls `portfolioStore.loadPositions()`
-2. Store triggers async via data-access
-3. Store sets loading, patches positions
+1. UI calls `store.loadItems()`
+2. Store triggers async via data-access service
+3. Store sets loading, patches items via patchState
 4. Computed signals update UI
 
 Key difference: Redux spreads logic across files. SignalStore keeps it together.
@@ -83,5 +90,5 @@ Key difference: Redux spreads logic across files. SignalStore keeps it together.
 
 ## Quick Reference
 
-- Full rules: [ngrx-signals.instructions.md](../copilot-samples/instructions/ngrx-signals.instructions.md)
-- Fundamentals: [./fundamentals/](./fundamentals/)
+- Full architecture rules: [ngrx-signals.instructions.md](../copilot-samples/instructions/ngrx-signals.instructions.md)
+- All fundamentals: [./fundamentals/](./fundamentals/)

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a cutting-edge Angular monorepo demonstrating modern state management with Signals and NgRx. All code must follow the latest Angular best practices and modern patterns.
+This is a cutting-edge Angular monorepo demonstrating modern state management with Signals and NgRx. All code must follow the latest Angular best practices and modern patterns. This project is also an experimental space for the user to develop external applications, such as the ***Name-Hidden*** mobile app, using Angular and Ionic. The `external-context/` directory is a local workspace for the user to store all relevant information, code, and documentation related to their work on external apps. This allows the user to have a centralized location for all their work on external apps, and easily access and manage their projects.
 
 ## Workspace Structure
 
@@ -10,6 +10,8 @@ This is a cutting-edge Angular monorepo demonstrating modern state management wi
 - **Angular 21.1.1**: Latest version with Signal Forms and zoneless support
 - **TypeScript 5.9.3**: Strict mode enabled
 - **Testing**: Vitest with @nx/vitest inferred tasks
+- **Documentation**: Comprehensive docs in `docs/` for human learning, `.github/` for AI instructions
+- **External Context**: `external-context/` for user-specific app development (gitignored). Prevent sensitive such as app name, business naming specfic to be committed. Only store technical information, architectural decisions, and code snippets that are not sensitive to serve the intent of technical reference for the user, common technical patterns, and architectural decisions. Do not store any business-specific information, naming conventions, or any other sensitive information that should not be shared publicly. The user can create subfolders for each app they are working on, and store all relevant information, code, and documentation in those subfolders. This allows the user to have a centralized location for all their work on external apps, and easily access and manage their projects.
 
 ## Core Principles
 

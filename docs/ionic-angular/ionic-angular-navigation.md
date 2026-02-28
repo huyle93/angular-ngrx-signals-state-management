@@ -606,12 +606,14 @@ type AccountType = 'brokerage' | 'crypto' | 'ira';
         <ion-buttons slot="start">
           @if (currentStepIndex() > 0) {
             <ion-button (click)="previousStep()">Back</ion-button>
-          } @else {
-            <ion-button (click)="cancel()">Cancel</ion-button>
           }
         </ion-buttons>
         <ion-title>{{ stepTitles[currentStepIndex()] }}</ion-title>
         <ion-buttons slot="end">
+          <!-- Cancel is always visible in slot="end" — native iOS modal pattern.
+               Tapping it from any step (including step 5) dismisses the entire modal
+               with a slide-down animation back to the originating tab. -->
+          <ion-button (click)="cancel()">Cancel</ion-button>
           @if (isLastStep()) {
             <ion-button (click)="submit()" [strong]="true">Submit</ion-button>
           } @else {
@@ -674,6 +676,9 @@ export class AccountOpeningWizardComponent {
   }
 
   protected cancel(): void {
+    // dismiss() triggers the reverse of the present animation — the modal slides back
+    // down to reveal the originating tab, regardless of which step the user is on.
+    // No navigation direction decision needed: the tab was never left, it was overlaid.
     this.modalCtrl.dismiss(null, 'cancel');
   }
 
@@ -780,6 +785,26 @@ bar is visible during the wizard.
   pressing back walks backward through wizard steps before reaching the portfolio list.
 - If the wizard must launch from multiple tabs, every step route must be duplicated per tab.
 
+**Cancel from any step (inside-tabs routed wizard):**
+
+Use `navigateBack` pointing directly at the tab root — **not** `navCtrl.back()` (only pops
+one step) and **not** `navigateRoot` (crossfade animation signals a root reset, not a cancel).
+The back-slide animation is the correct native feel for abandonment: the user "goes backwards"
+out of the wizard in one jump.
+
+```typescript
+// In any wizard step component — cancel from step 5 jumps directly to tab root
+import { NavController } from '@ionic/angular/standalone';
+
+private readonly navCtrl = inject(NavController);
+
+protected cancel(): void {
+  // navigateBack animates with the "slide left out" direction — correct for cancel.
+  // It jumps to the target URL directly, popping the entire wizard stack at once.
+  this.navCtrl.navigateBack('/tabs/portfolio');
+}
+```
+
 **Acceptable when:** The wizard is 2-3 steps, belongs to a single tab, and the tab bar
 being visible is not a UX concern.
 
@@ -817,6 +842,29 @@ export const routes: Routes = [
 - **Downside vs modal:** No `canDismiss` guard, no swipe-down-to-dismiss. The user can swipe
   back through steps and exit without explicit Cancel. Add a `canDeactivate` route guard to
   warn about unsaved progress.
+
+**Cancel from any step (outside-tabs routed wizard):**
+
+On **completion** use `navigateRoot` (crossfade — a deliberate top-level reset landing on the
+tab root). On **cancel** use `navigateBack` — the back-slide animation signals the user is
+retreating, not completing.
+
+```typescript
+protected cancel(): void {
+  // Back animation: "I'm leaving / abandoned this flow" — correct native feel.
+  this.navCtrl.navigateBack('/tabs/portfolio');
+}
+
+protected onSubmitSuccess(): void {
+  // Root animation: "Flow complete, clean reset to home" — no back history into wizard.
+  this.navCtrl.navigateRoot('/tabs/portfolio');
+}
+```
+
+| Action | API | Animation | Why |
+|---|---|---|---|
+| Cancel from any step | `navigateBack('/tabs/portfolio')` | Slide out (back) | User retreating — abandon semantics |
+| Submit / completion | `navigateRoot('/tabs/portfolio')` | Crossfade | Clean reset — no going back into wizard |
 
 #### When to Convert from Routes to Modal
 
