@@ -688,12 +688,13 @@ validate, and emit next/back intents.
 
 ```typescript
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   NavController, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
-  IonBackButton, IonContent, IonProgressBar, IonRouterOutlet,
+  IonBackButton, IonProgressBar, IonRouterOutlet,
 } from '@ionic/angular/standalone';
 import { AccountOpeningStore } from './account-opening.store';
+import { AccountOpeningFlowContextService } from './account-opening-flow-context.service';
 
 @Component({
   selector: 'app-wizard-shell',
@@ -723,6 +724,9 @@ export class WizardShellComponent {
   protected readonly store = inject(AccountOpeningStore);
   private readonly navCtrl = inject(NavController);
   private readonly route = inject(ActivatedRoute);
+  // originUrl is navigation context, not domain state — lives in a root-scoped
+  // service so it survives across the calling tab and the wizard route scope.
+  private readonly flowCtx = inject(AccountOpeningFlowContextService);
 
   /** URL of the first step — used as defaultHref when there is no stack history. */
   protected readonly firstStepUrl = computed(() => {
@@ -730,10 +734,18 @@ export class WizardShellComponent {
     return `/account-opening/${accountType}/account-type`;
   });
 
+  /** Cancel the flow — back animation, user is retreating / abandoning. */
   protected cancel(): void {
-    const origin = this.store.originUrl() ?? '/tabs/portfolio';
-    // Back animation: user is retreating / abandoning the flow.
+    const origin = this.flowCtx.originUrl() ?? '/tabs/portfolio';
+    this.flowCtx.clear();
     this.navCtrl.navigateBack(origin);
+  }
+
+  /** Complete the flow — root animation, forward progress to a fresh destination. */
+  protected complete(): void {
+    const origin = this.flowCtx.originUrl() ?? '/tabs/portfolio';
+    this.flowCtx.clear();
+    this.navCtrl.navigateRoot(origin);
   }
 }
 ```
