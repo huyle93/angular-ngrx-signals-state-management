@@ -14,7 +14,7 @@
 4. [Tab Routing](#4-tab-routing)
 5. [Asset Detail Page (PDP) -- Reusing Views Across Tabs](#5-asset-detail-page-pdp----reusing-views-across-tabs)
 6. [Global Search -- Routed Page Pattern](#6-global-search----routed-page-pattern)
-7. [Get-Started Account Opening Wizard](#7-get-started-account-opening-wizard)
+7. [Multi-Step Wizard -- Account Opening Flow](#7-multi-step-wizard----account-opening-flow)
 8. [Route vs Modal -- Decision Framework](#8-route-vs-modal----decision-framework)
 9. [Animations and Gestures](#9-animations-and-gestures)
 10. [Page Lifecycle](#10-page-lifecycle)
@@ -559,29 +559,350 @@ this.navCtrl.navigateForward([this.tabRoot, 'search']);
 
 ---
 
-## 7. Get-Started Account Opening Wizard
+## 7. Multi-Step Wizard -- Account Opening Flow
 
 After login, the user may need to open investing accounts (Brokerage, Crypto, IRA). This
 wizard is a multi-step flow launchable from Portfolio ("Open a Brokerage Account" CTA),
 Discover ("Start Trading Crypto" CTA), or Profile ("Open New Account" button).
 
-### 7.1 Why a Modal, Not Routed Pages
+Two navigation patterns can implement this flow: **routed pages** and **modal with internal
+steps**. Neither is universally better. The correct choice depends on product requirements --
+specifically around resume/re-entry, cancel semantics, tab bar visibility, and flow
+complexity. Section 7.1 provides a product Q&A exercise to determine which pattern fits.
 
-A wizard like this cannot be implemented as tab routes for three reasons:
+### 7.1 Choosing the Pattern -- Product Requirements Drive the Decision
 
-1. **Cross-tab launching.** If the wizard routes live under `portfolio/`, launching from
-   Discover would either cross tabs (forbidden) or require route duplication of every wizard
-   step in every tab (absurd for a multi-step flow).
+Run these questions with PM/UX. Their answers become the business-backed rationale for the
+navigation pattern.
 
-2. **Back button conflict.** If wizard steps are routed pages in a tab stack, pressing the
-   hardware back button pops a wizard step -- but also corrupts the tab's real navigation
-   history. The user cannot cleanly abandon the wizard mid-flow.
+**Resume, recovery, and re-entry (usually the decider):**
 
-3. **Isolation.** The wizard is a self-contained flow with its own "Cancel" and "Back"
-   semantics. A modal encapsulates this perfectly: dismiss to abandon, internal step
-   navigation is managed by signals, and the underlying tab is untouched.
+| # | Question | YES implies | NO implies |
+|---|---|---|---|
+| 1 | If user leaves mid-flow (background, crash, app update), should they resume where they left off? | Routed | Modal acceptable |
+| 2 | Should we support a "Continue account opening" entry point from Portfolio/Profile later? | Routed | Either |
+| 3 | If user abandons at step 6, should a push/email deep link return them to step 6? | Routed | Either |
+| 4 | Should support/analytics identify "stuck at step X" with a stable identifier? | Routed | Either |
 
-### 7.2 AccountOpeningWizardComponent
+**Cancel semantics and immersion:**
+
+| # | Question | YES implies | NO implies |
+|---|---|---|---|
+| 5 | Is "X Cancel" a "terminate process / exit application" action (not "dismiss overlay")? | Routed | Modal |
+| 6 | On X, do we need a "Discard progress?" confirmation dialog? | Routed (safer for serious flows) | Either |
+| 7 | Should the tab bar be hidden during the flow (focus mode, like checkout)? | Routed outside tabs | Either |
+
+**Complexity, branching, and compliance:**
+
+| # | Question | YES implies | NO implies |
+|---|---|---|---|
+| 8 | Will steps vary by account type and change over time? | Routed | Either |
+| 9 | Do we expect conditional skips/reordering based on eligibility or KYC? | Routed | Either |
+| 10 | Do we need an audit trail proving the user visited specific disclosure screens? | Routed | Either |
+| 11 | Should QA open step 3 directly for testing without walking through steps 1-2? | Routed | Either |
+
+**Decision rule:** If PM answers YES to 2+ questions in the resume/re-entry group (1-4),
+the product outcome strongly favors a routed wizard. If PM answers NO to all of them and the
+flow is short (3-4 steps) with low stakes, a modal wizard is a clean fit.
+
+### 7.2 Option A -- Routed Wizard (Outside Tabs)
+
+This is the pattern for high-stakes, multi-step journeys where the product requires
+addressable steps, resume capability, and a focused full-screen experience.
+
+#### 7.2.1 Why Routed
+
+- **One navigation system.** Hardware back, swipe-back, and `ion-back-button` work natively
+  between steps with no custom logic.
+- **Addressable steps.** Each step has a URL. Deep linking, session resume, and
+  "continue application" entry points work naturally.
+- **Scales with complexity.** Branching by account type, conditional step skips, and
+  server-driven step sequences are straightforward when each step is a route.
+- **Observability.** Step-level analytics, audit trails, and support debugging use stable
+  route-based identifiers (`account_opening_brokerage_funding`).
+
+#### 7.2.2 Route Configuration
+
+Routes live **outside** `tabs` so the tab bar is hidden and the wizard takes over the full
+screen. A shell component owns the header (Back + X Cancel) and progress indicator. Step
+components are rendered by parent route's `ion-router-outlet`.
+
+```typescript
+// In app.routes.ts — wizard routes at the top level, alongside tabs
+export const routes: Routes = [
+  { path: '', redirectTo: 'tabs/portfolio', pathMatch: 'full' },
+  {
+    path: 'tabs',
+    loadComponent: () => import('./tabs/tabs.component').then(m => m.TabsComponent),
+    children: [/* tab routes from Section 4.1 */],
+  },
+  // Account Opening Wizard — outside tabs, tab bar hidden
+  {
+    path: 'account-opening/:accountType',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./account-opening/wizard-shell.component').then(m => m.WizardShellComponent),
+    providers: [AccountOpeningStore], // SignalStore scoped to wizard lifecycle
+    children: [
+      {
+        path: 'account-type',
+        loadComponent: () =>
+          import('./account-opening/steps/account-type.component').then(m => m.AccountTypeStepComponent),
+      },
+      {
+        path: 'personal-info',
+        loadComponent: () =>
+          import('./account-opening/steps/personal-info.component').then(m => m.PersonalInfoStepComponent),
+      },
+      {
+        path: 'disclosures',
+        loadComponent: () =>
+          import('./account-opening/steps/disclosures.component').then(m => m.DisclosuresStepComponent),
+      },
+      {
+        path: 'funding',
+        loadComponent: () =>
+          import('./account-opening/steps/funding.component').then(m => m.FundingStepComponent),
+      },
+      {
+        path: 'review',
+        loadComponent: () =>
+          import('./account-opening/steps/review.component').then(m => m.ReviewStepComponent),
+      },
+      // Invalid or missing step — redirect to first step
+      { path: '', redirectTo: 'account-type', pathMatch: 'full' },
+      { path: '**', redirectTo: 'account-type' },
+    ],
+  },
+];
+```
+
+**URL shape:** `/account-opening/brokerage/personal-info`. The URL encodes account type and
+current step. This supports deep linking, resume, and analytics instrumentation.
+
+#### 7.2.3 Wizard Shell Component
+
+The shell owns the header with Back + X Cancel, a progress indicator, and a nested
+`ion-router-outlet` for step content. Step components are "dumb" -- they render forms,
+validate, and emit next/back intents.
+
+```typescript
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  NavController, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
+  IonBackButton, IonContent, IonProgressBar, IonRouterOutlet,
+} from '@ionic/angular/standalone';
+import { AccountOpeningStore } from './account-opening.store';
+
+@Component({
+  selector: 'app-wizard-shell',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
+    IonBackButton, IonProgressBar, IonRouterOutlet,
+  ],
+  template: `
+    <ion-header>
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-back-button [defaultHref]="firstStepUrl()" />
+        </ion-buttons>
+        <ion-title>{{ store.currentStepTitle() }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cancel()">Cancel</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+      <ion-progress-bar [value]="store.progress()" />
+    </ion-header>
+    <ion-router-outlet />
+  `,
+})
+export class WizardShellComponent {
+  protected readonly store = inject(AccountOpeningStore);
+  private readonly navCtrl = inject(NavController);
+  private readonly route = inject(ActivatedRoute);
+
+  /** URL of the first step — used as defaultHref when there is no stack history. */
+  protected readonly firstStepUrl = computed(() => {
+    const accountType = this.route.snapshot.paramMap.get('accountType') ?? 'brokerage';
+    return `/account-opening/${accountType}/account-type`;
+  });
+
+  protected cancel(): void {
+    const origin = this.store.originUrl() ?? '/tabs/portfolio';
+    // Back animation: user is retreating / abandoning the flow.
+    this.navCtrl.navigateBack(origin);
+  }
+}
+```
+
+**Key details:**
+
+- `ion-back-button` handles step-to-step back navigation. If user arrived via deep link
+  (no stack history), `defaultHref` sends them to the first step.
+- Cancel always exits the entire wizard with a back-slide animation via `navigateBack`.
+- Completion is called by the last step component via `inject(WizardShellComponent).complete()`
+  or by emitting an event the shell handles — never navigated from inside the step directly.
+- The shell's `ion-router-outlet` renders step components. Each step transition is a
+  standard Ionic forward/back page animation with swipe-back support.
+- **`originUrl` lives in `AccountOpeningFlowContextService`, not in `AccountOpeningStore`.**
+  The store is route-scoped (destroyed on exit); the service is root-scoped (survives across
+  lifecycle boundaries). The calling tab sets the origin before navigating forward — at that
+  point the store does not yet exist.
+
+#### 7.2.4 Origin Tracking and Return
+
+On wizard entry, capture the launching URL so Cancel and completion return the user to the
+correct location (Portfolio, PDP, Profile, etc.).
+
+```typescript
+import { Injectable, signal } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class AccountOpeningFlowContextService {
+  private readonly _originUrl = signal<string | null>(null);
+  readonly originUrl = this._originUrl.asReadonly();
+
+  /** Call once when launching the wizard. */
+  setOrigin(url: string): void {
+    this._originUrl.set(url);
+  }
+
+  clear(): void {
+    this._originUrl.set(null);
+  }
+}
+```
+
+Launching from any tab:
+
+```typescript
+// In PortfolioComponent
+private readonly flowContext = inject(AccountOpeningFlowContextService);
+private readonly navCtrl = inject(NavController);
+
+protected openBrokerageAccount(): void {
+  this.flowContext.setOrigin('/tabs/portfolio');
+  this.navCtrl.navigateForward('/account-opening/brokerage/account-type');
+}
+
+// In DiscoverComponent
+protected startCryptoTrading(): void {
+  this.flowContext.setOrigin('/tabs/discover');
+  this.navCtrl.navigateForward('/account-opening/crypto/account-type');
+}
+
+// In ProfileComponent
+protected openNewAccount(): void {
+  this.flowContext.setOrigin('/tabs/profile');
+  this.navCtrl.navigateForward('/account-opening/brokerage/account-type');
+}
+```
+
+**`clear()` must be called before every exit** (cancel and completion). The shell's `cancel()`
+and `complete()` methods both call `flowCtx.clear()` immediately before navigating away.
+If `clear()` is omitted, a stale origin from a previous session can send the user to the
+wrong tab on their next wizard run.
+
+**Deep link null case:** When a user opens `/account-opening/brokerage/personal-info` directly
+(push notification, email link), no tab component has called `setOrigin()`. `originUrl()`
+returns `null`. The `?? '/tabs/portfolio'` fallback in the shell is the intentional default
+— document this fallback in a product decision if a different tab should be preferred for
+the app's primary account type.
+
+For resilience against app kill/crash, persist `originUrl` to `sessionStorage` in
+`AccountOpeningFlowContextService`. On `setOrigin`, write to storage. On service init
+(`constructor` or `withHooks`), read from storage if the in-memory signal is null. On
+`clear()`, remove from storage. This keeps origin tracking co-located in the one service
+that owns it.
+
+#### 7.2.5 Step Navigation
+
+Step components call the store or `NavController` to move forward/backward:
+
+```typescript
+// In any step component (e.g. PersonalInfoStepComponent)
+private readonly store = inject(AccountOpeningStore);
+private readonly navCtrl = inject(NavController);
+
+protected next(): void {
+  const nextStep = this.store.getNextStep(); // e.g. 'disclosures'
+  const accountType = this.store.accountType();
+  this.navCtrl.navigateForward(`/account-opening/${accountType}/${nextStep}`);
+}
+```
+
+Back navigation is handled automatically by `ion-back-button` in the shell or swipe-back
+gesture. No explicit back logic needed in step components.
+
+#### 7.2.6 Cancel and Completion Animations
+
+| Action | API | Animation | Why |
+|---|---|---|---|
+| Cancel from any step | `navigateBack(originUrl)` | Slide out (back) | User retreating -- abandon semantics |
+| Submit / completion | `navigateRoot(originUrl)` | Crossfade | Clean reset -- flow complete, no back into wizard |
+| Step forward | `navigateForward(nextStepUrl)` | Slide in from right | Standard forward push |
+| Step back | `ion-back-button` / swipe-back | Slide out to right | Standard back pop |
+
+On cancel: `navigateBack` produces a back-slide animation. This is correct because the user
+is retreating. Do not use `navigateRoot` for cancel -- the crossfade animation signals
+completion, not abandonment. Do not use `navCtrl.back()` -- it only pops one step.
+
+On completion: `navigateRoot` produces a crossfade and clears the wizard from the stack.
+The user cannot swipe back into the wizard after successful submission.
+
+#### 7.2.7 Edge Cases
+
+- **Deep link to step 3 (no prior history).** `ion-back-button` uses `defaultHref` to
+  navigate to step 1. The store should validate that prior steps are complete and redirect
+  to the earliest incomplete step if needed.
+- **Invalid step in URL.** The wildcard redirect (`path: '**'`) in the route config sends
+  the user to the first step.
+- **Browser refresh / app kill.** If the store persists progress to `sessionStorage`, the
+  wizard can rehydrate. Without persistence, the user starts over (acceptable for many
+  products).
+- **Branching changes step list mid-flow.** If eligibility results remove a future step,
+  the store's step sequence updates. If the user is already on a now-invalid step, redirect
+  to the nearest valid step.
+
+#### 7.2.8 Config-Driven Step Sequences
+
+Support multiple account types with different step lists:
+
+```typescript
+const STEP_SEQUENCES: Record<string, string[]> = {
+  brokerage: ['account-type', 'personal-info', 'disclosures', 'funding', 'review'],
+  crypto:    ['account-type', 'personal-info', 'crypto-agreement', 'funding', 'review'],
+  ira:       ['account-type', 'personal-info', 'beneficiary', 'disclosures', 'funding', 'review'],
+};
+
+// In AccountOpeningStore
+getNextStep(): string | null { /* ... */ }
+getPrevStep(): string | null { /* ... */ }
+getStepIndex(step: string): number { /* ... */ }
+```
+
+This structure supports server-driven step maps. Replace the static record with an API
+response and the routing layer remains unchanged.
+
+### 7.3 Option B -- Modal Wizard
+
+This is the pattern for short, self-contained flows where the product does not require
+resume, deep linking, or step-level addressability.
+
+#### 7.3.1 Why Modal
+
+- **Isolation.** The modal overlays the current tab without touching its navigation stack.
+  Dismissing restores the exact tab state.
+- **Cross-tab launching.** Any tab can present the same modal. No route duplication needed.
+- **Dismiss guard.** `canDismiss` blocks accidental swipe/backdrop dismissal -- useful for
+  flows with unsaved form state.
+- **Cancel animation.** `modalCtrl.dismiss()` slides the modal back down (reverse of
+  present). No navigation direction decision needed.
+
+#### 7.3.2 AccountOpeningWizardComponent (Modal)
 
 ```typescript
 import { Component, ChangeDetectionStrategy, signal, computed, inject, input } from '@angular/core';
@@ -610,9 +931,6 @@ type AccountType = 'brokerage' | 'crypto' | 'ira';
         </ion-buttons>
         <ion-title>{{ stepTitles[currentStepIndex()] }}</ion-title>
         <ion-buttons slot="end">
-          <!-- Cancel is always visible in slot="end" — native iOS modal pattern.
-               Tapping it from any step (including step 5) dismisses the entire modal
-               with a slide-down animation back to the originating tab. -->
           <ion-button (click)="cancel()">Cancel</ion-button>
           @if (isLastStep()) {
             <ion-button (click)="submit()" [strong]="true">Submit</ion-button>
@@ -627,18 +945,10 @@ type AccountType = 'brokerage' | 'crypto' | 'ira';
     </ion-header>
     <ion-content class="ion-padding">
       @switch (currentStepIndex()) {
-        @case (0) {
-          <!-- Step 1: Select account type (brokerage / crypto / IRA) -->
-        }
-        @case (1) {
-          <!-- Step 2: Personal information & disclosures -->
-        }
-        @case (2) {
-          <!-- Step 3: Funding source (link bank, transfer) -->
-        }
-        @case (3) {
-          <!-- Step 4: Review & submit -->
-        }
+        @case (0) { <!-- Account type selection --> }
+        @case (1) { <!-- Personal information --> }
+        @case (2) { <!-- Funding source --> }
+        @case (3) { <!-- Review & submit --> }
       }
     </ion-content>
   `,
@@ -646,18 +956,11 @@ type AccountType = 'brokerage' | 'crypto' | 'ira';
 export class AccountOpeningWizardComponent {
   private readonly modalCtrl = inject(ModalController);
 
-  /** Pre-selected account type passed from the launching context. */
   readonly preselectedType = input<AccountType>();
 
-  protected readonly stepTitles = [
-    'Account Type',
-    'Personal Info',
-    'Funding',
-    'Review & Submit',
-  ];
-
+  protected readonly stepTitles = ['Account Type', 'Personal Info', 'Funding', 'Review'];
   protected readonly currentStepIndex = signal(0);
-  protected readonly canAdvance = signal(true); // Validate per step
+  protected readonly canAdvance = signal(true);
 
   protected readonly isLastStep = computed(
     () => this.currentStepIndex() === this.stepTitles.length - 1,
@@ -676,22 +979,18 @@ export class AccountOpeningWizardComponent {
   }
 
   protected cancel(): void {
-    // dismiss() triggers the reverse of the present animation — the modal slides back
-    // down to reveal the originating tab, regardless of which step the user is on.
-    // No navigation direction decision needed: the tab was never left, it was overlaid.
+    // dismiss() slides the modal back down to reveal the originating tab.
+    // No NavController needed -- the tab was overlaid, never left.
     this.modalCtrl.dismiss(null, 'cancel');
   }
 
   protected submit(): void {
-    // Call account creation API, then dismiss on success
     this.modalCtrl.dismiss({ accountType: 'brokerage' }, 'confirm');
   }
 }
 ```
 
-### 7.3 AccountOpeningService
-
-Wraps the modal creation so any component can launch the wizard with one call:
+#### 7.3.3 AccountOpeningService
 
 ```typescript
 import { Injectable, inject } from '@angular/core';
@@ -711,185 +1010,71 @@ export class AccountOpeningService {
       canDismiss: async (_data, role) => role === 'confirm' || role === 'cancel',
     });
     await modal.present();
-
     const { role } = await modal.onDidDismiss();
     return { opened: role === 'confirm' };
   }
 }
 ```
 
-### 7.4 Launching from Any Tab
+Launching from any tab:
 
 ```typescript
 // In PortfolioComponent
-private readonly accountOpening = inject(AccountOpeningService);
-
 protected async openBrokerageAccount(): Promise<void> {
-  const result = await this.accountOpening.start('brokerage');
-  if (result.opened) {
-    // Refresh portfolio data
-  }
-}
-
-// In DiscoverComponent
-protected async startCryptoTrading(): Promise<void> {
-  await this.accountOpening.start('crypto');
-}
-
-// In ProfileComponent
-protected async openNewAccount(): Promise<void> {
-  await this.accountOpening.start();
+  const result = await inject(AccountOpeningService).start('brokerage');
+  if (result.opened) { /* refresh portfolio data */ }
 }
 ```
 
-The modal overlays whatever tab is active. Dismissing it returns the user to their exact
-position in their current tab with full state preservation.
+The modal overlays whatever tab is active. Dismissing returns the user to their exact
+position in the current tab.
 
-### 7.5 When to Use `ion-nav` Inside a Modal
+#### 7.3.4 When to Use `ion-nav` Inside a Modal
 
-For very complex wizards (10+ steps, conditional branching, each step is a full standalone
+For complex wizards (10+ steps, conditional branching, each step is a full standalone
 component), a modal can contain `ion-nav` for native-style push/pop navigation inside the
-modal:
+modal. `ion-nav` manages its own internal stack completely isolated from the tab router. Use
+this only when `@switch`-based step management becomes unwieldy.
 
 ```typescript
-template: `
-  <ion-nav [root]="wizardStep1" />
-`
+template: `<ion-nav [root]="wizardStep1" />`
 ```
 
-`ion-nav` manages its own internal stack completely isolated from the tab router. Use this
-only when `@switch`-based step management becomes unwieldy. For our 4-step account opening
-flow, signal-based steps are the right choice.
+### 7.4 Pattern Comparison
 
-### 7.6 Alternative: Routed Wizard (When Already Built)
+| Concern | Routed wizard (7.2) | Modal wizard (7.3) |
+|---|---|---|
+| Resume / re-entry | Natural -- URL encodes step; restore from storage | Must rebuild custom restore logic |
+| Deep linking to a step | Built-in via route params | Not available |
+| Step analytics / audit | Stable route-based identifiers | Must instrument manually per step |
+| QA direct-to-step | Navigate to URL | Requires test harness |
+| Hardware back / swipe-back | Native per step (no custom code) | Must implement manually or use `ion-nav` |
+| Tab bar during flow | Hidden (routes outside tabs) | Hidden (modal overlay) |
+| Cross-tab launching | Any tab navigates to `/account-opening/...` | Any tab presents the modal |
+| Cancel animation | `navigateBack(originUrl)` -- back slide | `modalCtrl.dismiss()` -- slide down |
+| Completion animation | `navigateRoot(originUrl)` -- crossfade | `modalCtrl.dismiss()` -- slide down |
+| Dismiss guard | `canDeactivate` route guard | `canDismiss` on modal |
+| Branching / variant steps | Config-driven step sequences per account type | Signal-based `@switch` or `ion-nav` |
+| State lifecycle | SignalStore scoped to route `providers` | Exists while modal is open |
 
-If the wizard is already implemented as routed pages, it can work correctly without converting
-to a modal. The key question is **where the routes live**, which determines whether the tab
-bar is visible during the wizard.
+### 7.5 Do's and Don'ts
 
-#### Routes Inside `tabs` Children — Tab Bar Visible
-
-```typescript
-// Wizard routes under a tab prefix — tab bar stays visible
-{ path: 'portfolio/open-account', loadComponent: () => import('./wizard/step1.component').then(m => m.Step1Component) },
-{ path: 'portfolio/open-account/personal-info', loadComponent: () => import('./wizard/step2.component').then(m => m.Step2Component) },
-{ path: 'portfolio/open-account/funding', loadComponent: () => import('./wizard/step3.component').then(m => m.Step3Component) },
-{ path: 'portfolio/open-account/review', loadComponent: () => import('./wizard/step4.component').then(m => m.Step4Component) },
-```
-
-**Behavior:**
-
-- Tab bar remains visible at the bottom throughout the entire wizard.
-- Swipe-back and hardware back pop wizard steps correctly (native feel).
-- But every wizard step pollutes the tab's back history. After completing the wizard,
-  pressing back walks backward through wizard steps before reaching the portfolio list.
-- If the wizard must launch from multiple tabs, every step route must be duplicated per tab.
-
-**Cancel from any step (inside-tabs routed wizard):**
-
-Use `navigateBack` pointing directly at the tab root — **not** `navCtrl.back()` (only pops
-one step) and **not** `navigateRoot` (crossfade animation signals a root reset, not a cancel).
-The back-slide animation is the correct native feel for abandonment: the user "goes backwards"
-out of the wizard in one jump.
-
-```typescript
-// In any wizard step component — cancel from step 5 jumps directly to tab root
-import { NavController } from '@ionic/angular/standalone';
-
-private readonly navCtrl = inject(NavController);
-
-protected cancel(): void {
-  // navigateBack animates with the "slide left out" direction — correct for cancel.
-  // It jumps to the target URL directly, popping the entire wizard stack at once.
-  this.navCtrl.navigateBack('/tabs/portfolio');
-}
-```
-
-**Acceptable when:** The wizard is 2-3 steps, belongs to a single tab, and the tab bar
-being visible is not a UX concern.
-
-#### Routes Outside `tabs` — Tab Bar Hidden
-
-```typescript
-export const routes: Routes = [
-  { path: '', redirectTo: 'tabs/portfolio', pathMatch: 'full' },
-  {
-    path: 'tabs',
-    loadComponent: () => import('./tabs/tabs.component').then(m => m.TabsComponent),
-    children: [/* tab routes */],
-  },
-  // Wizard at top level — renders in root ion-router-outlet, no tab bar
-  {
-    path: 'open-account',
-    canActivate: [authGuard],
-    children: [
-      { path: '', loadComponent: () => import('./wizard/step1.component').then(m => m.Step1Component) },
-      { path: 'personal-info', loadComponent: () => import('./wizard/step2.component').then(m => m.Step2Component) },
-      { path: 'funding', loadComponent: () => import('./wizard/step3.component').then(m => m.Step3Component) },
-      { path: 'review', loadComponent: () => import('./wizard/step4.component').then(m => m.Step4Component) },
-    ],
-  },
-];
-```
-
-**Behavior:**
-
-- Tab bar is completely hidden — the wizard takes over the full screen.
-- Swipe-back between wizard steps works natively.
-- Only one set of routes needed (no per-tab duplication).
-- Navigate to `/open-account` from any tab. On completion, use
-  `navigateRoot('/tabs/portfolio')` to return.
-- **Downside vs modal:** No `canDismiss` guard, no swipe-down-to-dismiss. The user can swipe
-  back through steps and exit without explicit Cancel. Add a `canDeactivate` route guard to
-  warn about unsaved progress.
-
-**Cancel from any step (outside-tabs routed wizard):**
-
-On **completion** use `navigateRoot` (crossfade — a deliberate top-level reset landing on the
-tab root). On **cancel** use `navigateBack` — the back-slide animation signals the user is
-retreating, not completing.
-
-```typescript
-protected cancel(): void {
-  // Back animation: "I'm leaving / abandoned this flow" — correct native feel.
-  this.navCtrl.navigateBack('/tabs/portfolio');
-}
-
-protected onSubmitSuccess(): void {
-  // Root animation: "Flow complete, clean reset to home" — no back history into wizard.
-  this.navCtrl.navigateRoot('/tabs/portfolio');
-}
-```
-
-| Action | API | Animation | Why |
-|---|---|---|---|
-| Cancel from any step | `navigateBack('/tabs/portfolio')` | Slide out (back) | User retreating — abandon semantics |
-| Submit / completion | `navigateRoot('/tabs/portfolio')` | Crossfade | Clean reset — no going back into wizard |
-
-#### When to Convert from Routes to Modal
-
-**Convert to a modal if:**
-
-- The wizard launches from 3+ places across different tabs.
-- You need `canDismiss` to block accidental abandonment (swipe, backdrop tap).
-- The design requires the wizard to feel like an overlay, not a full navigation takeover.
-- The user's position in the current tab must be preserved exactly during the wizard.
-
-**Keep routed pages if:**
-
-- The wizard belongs to one tab with 2-3 steps.
-- URL-addressable steps add value (deep linking, session resumption).
-- It is already built and working correctly — don't rewrite working code without a reason.
-
-### 7.7 Do's and Don'ts
-
+> **DO:** Let product requirements (resume, deep link, audit trail, branching) drive the
+> pattern choice. Use Section 7.1 to gather answers.
+> **DO:** Place routed wizard routes **outside** `tabs` to hide the tab bar during the flow.
+> **DO:** Use `navigateBack(originUrl)` for cancel and `navigateRoot(originUrl)` for
+> completion in routed wizards.
 > **DO:** Use `canDismiss` on modal wizards to prevent accidental swipe/backdrop dismissal.
-> **DO:** Manage wizard steps with signals and `@switch` for flows under 6 steps.
-> **DO:** Use `ion-nav` inside the modal for wizards with 10+ steps or conditional branching.
+> **DO:** Manage modal wizard steps with signals and `@switch` for flows under 6 steps.
 >
-> **DON'T:** Put wizard step routes inside `tabs` children if the wizard launches from multiple tabs.
-> **DON'T:** Duplicate 4+ wizard step routes across every tab prefix — that signals the need for a modal.
-> **DON'T:** Use `navigateBack` to exit a completed wizard — use `modalCtrl.dismiss()` or `navigateRoot`.
+> **DON'T:** Put wizard step routes inside `tabs` children -- it pollutes the tab's back
+> history and requires per-tab route duplication for every step.
+> **DON'T:** Use `navigateRoot` for cancel -- the crossfade animation signals completion,
+> not abandonment.
+> **DON'T:** Use `navCtrl.back()` for cancel -- it only pops one step, not the entire wizard.
+> **DON'T:** Use a modal when product requires resume, deep linking, or step-level audit.
+> **DON'T:** Use routed pages when the flow is 3-4 steps, low stakes, and no resume is needed
+> -- a modal is simpler.
 
 ---
 
@@ -900,7 +1085,7 @@ protected onSubmitSuccess(): void {
 | Drill-down within a tab (Portfolio -> AAPL detail) | **Route** (sibling child) | Preserves tab stack; back button works natively; URL is meaningful for deep linking. |
 | Same view from multiple tabs (PDP from Portfolio, Discover, News) | **Route per tab** (shared component) | Each tab gets correct back navigation and tab highlighting. This is the Robinhood/Spotify pattern. |
 | Search as a navigation step (tab root → Search → PDP) | **Route per tab** (shared component) | User needs back-to-search from PDP to pick different results. Same reuse pattern as PDP. |
-| Multi-step wizard from any context (Account Opening) | **Modal** with internal steps | Isolates wizard state from tab stacks; cancel/back semantics are self-contained; avoids duplicating N wizard routes per tab. |
+| Multi-step wizard (Account Opening) | **Routed** (outside tabs) or **Modal** | Product decision: routed if resume, deep link, or audit trail needed (see Section 7.1 Q&A); modal if short, low-stakes, no re-entry. |
 | Settings sub-pages (Profile -> Settings -> Notifications) | **Route** (sibling under profile/) | Linear drill-down within a single tab. Standard shared-URL pattern. |
 | Quick action (confirm trade, set alert) | **Inline modal** with `isOpen` signal | Short-lived interaction; no routing needed; signal controls open/close. |
 | Sheet overlay (order type picker, filter drawer) | **Sheet modal** with breakpoints | `breakpoints` + `initialBreakpoint` create native bottom-sheet UX. Background remains interactive via `backdropBreakpoint`. |
@@ -1185,12 +1370,12 @@ inner page and there is no stack history to pop.
 | 5 | Missing `defaultHref` on `ion-back-button` | Always set it to the tab root (e.g. `/tabs/portfolio`). |
 | 6 | Importing from `@ionic/angular` | Always import from `@ionic/angular/standalone` for tree-shaking. |
 | 7 | Relative paths in tab navigation (`['asset', ticker]`) | Use absolute paths (`['/tabs/portfolio/asset', ticker]`). Relative paths break when deep in a stack. |
-| 8 | Wizard steps as tab routes | Wizard flows are modals with internal signal-based step management. Never pollute tab routing with wizard steps. |
+| 8 | Wizard steps as tab routes (inside `tabs` children) | Place wizard routes **outside** `tabs` (tab bar hidden) or use a modal. Never pollute a tab's back history with wizard steps. |
 | 9 | Single shared route for a cross-tab view (`tabs/asset/:ticker` or `tabs/search`) | Duplicate the route per tab (`portfolio/asset/:ticker`, `portfolio/search`, etc.). A shared route breaks tab highlighting and back navigation. |
 | 10 | Using `isOpen` on `ion-modal` without `(didDismiss)` handler | `isOpen` is one-way. You must listen to `didDismiss` and set the signal to `false`, or the modal cannot reopen. |
 | 11 | Missing `canDismiss` on modals with forms or wizards | Set `canDismiss` to a guard function to prevent accidental swipe/backdrop dismissal during data entry or multi-step flows. |
 | 12 | Custom CSS animations replacing Ionic defaults | Ionic provides native-quality page and modal animations by default. Only customize via `enterAnimation`/`leaveAnimation` when the design explicitly requires non-standard transitions. |
-| 13 | Routed wizard steps duplicated across every tab prefix | If a wizard needs 3+ step routes per tab, convert to a modal with signal-based steps. Route duplication is for single-page views (PDP), not multi-step flows. |
+| 13 | Routed wizard steps duplicated across every tab prefix | Place wizard routes outside `tabs` (one set of routes, tab bar hidden). Per-tab route duplication is for single-page views (PDP, Search), not multi-step flows. |
 
 ---
 
