@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "mock-streaming-server",
+  "projectType": "application",
+  "tags": ["type:app", "scope:dev-tools"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsx server.ts",
+        "cwd": "apps/mock-streaming-server"
+      }
+    },
+    "serve:delta": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsx server.ts",
+        "cwd": "apps/mock-streaming-server",
+        "env": {
+          "DEFAULT_MODE": "delta"
+        }
+      }
+    }
+  }
+}
