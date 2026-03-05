@@ -110,10 +110,11 @@ store.previewOrder({ accountNumber: '123', symbol: 'AAPL' });
 
 ### Pattern C: Events
 
-Use for cross-domain coordination (login/logout, session changes):
+Use for cross-domain coordination (login/logout, session changes). See [09-event-driven-architecture.md](09-event-driven-architecture.md) for the full guide.
 
 ```typescript
 // Login succeeded -> load profile, portfolio, watchlist
+// Each store reacts independently via withEventHandlers
 ```
 
 ---
