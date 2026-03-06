@@ -10,7 +10,7 @@
 
 1. [Goal](#1-goal)
 2. [Component Architecture](#2-component-architecture) -- 3-tier split: Parent, lib-line-chart wrapper, LWC engine
-3. [Component API and Visual States](#3-component-api-and-visual-states) -- Input contract, loading, success, empty, error
+3. [Component API and Visual States](#3-component-api-and-visual-states) -- Input contract, loading tiers (cold/warm/hot), skeleton, transitions, signal store derivation, success, empty, error
 4. [Domain Architecture](#4-domain-architecture)
 5. [UX Contract](#5-ux-contract)
 6. [LWC Configuration Defaults](#6-lwc-configuration-defaults) -- Crosshair, Interaction Locks, Visuals, Sizing, Time Scale
@@ -107,12 +107,300 @@ The parent communicates with `lib-line-chart` through a defined set of inputs. T
 
 Triggered when: the parent is fetching chart data for the first time (no LKG available) or after a timeframe change while fresh data is in flight.
 
+Loading is the most UX-critical state. On high-traffic screens like the portfolio home page, the chart is the centerpiece — a blank rectangle or generic shimmer box signals "broken," not "loading." The chart must feel alive from the first frame.
+
+There are three tiers of loading, each with distinct visual treatment:
+
+| Tier | Condition | Visual | User Perception |
+|---|---|---|---|
+| Cold start | No LKG data, first visit or cleared cache | Animated chart skeleton | "A chart is about to appear" |
+| Warm start | LKG data available from prior session | Real chart (cached) + subtle progress indicator | "My data is here and refreshing" |
+| Hot transition | Already in `success`, background refresh in flight | No visible change — silent data patch | "Nothing happened" (ideal) |
+
+Invariant across all tiers: the chart container renders at its final height immediately. No layout shift. No height change. No DOM addition/removal of the container element.
+
+#### 3.2.1 Cold Start Loading (Animated Chart Skeleton)
+
+This is the worst-case UX path: the user launches the app for the first time, taps into a chart screen, and has zero cached data. The API call is in flight. What appears in the chart container must communicate "chart" — not "empty gray box."
+
+**Design principle:** chart-shaped skeletons, not box-shaped. The placeholder must have the visual silhouette of a chart line. Users instantly recognize the shape and understand what is loading.
+
+**Recommended approach — CSS3 animated SVG skeleton:**
+
+Render a lightweight SVG `<path>` element inside the chart container that traces a gentle wave shape across the full width. Apply a shimmer gradient animation that sweeps horizontally, creating the effect of a chart line "breathing" while data loads.
+
+```html
+<!-- Inside lib-line-chart wrapper, shown when state === 'loading' && !lkgData -->
+<!-- Interactive demo: open chart-skeleton-demo.html in a browser -->
+<div class="chart-skeleton" [class.fadeOut]="isTransitioning()">
+  <svg viewBox="0 0 400 200" preserveAspectRatio="none" class="skeleton-line">
+    <defs>
+      <!-- Shimmer gradient — sweeps left-to-right via SVG <animate> -->
+      <linearGradient id="line-shimmer" gradientUnits="userSpaceOnUse"
+                      x1="-200" y1="0" x2="0" y2="0">
+        <stop offset="0%"   stop-color="var(--skeleton-base)" />
+        <stop offset="50%"  stop-color="var(--skeleton-highlight)" />
+        <stop offset="100%" stop-color="var(--skeleton-base)" />
+        <animate attributeName="x1" from="-200" to="450" dur="1.8s" repeatCount="indefinite" />
+        <animate attributeName="x2" from="0"    to="650" dur="1.8s" repeatCount="indefinite" />
+      </linearGradient>
+      <!-- Area shimmer gradient (synchronized with line) -->
+      <linearGradient id="area-shimmer" gradientUnits="userSpaceOnUse"
+                      x1="-200" y1="0" x2="0" y2="0">
+        <stop offset="0%"   stop-color="var(--skeleton-area)" />
+        <stop offset="50%"  stop-color="var(--skeleton-area-hi)" />
+        <stop offset="100%" stop-color="var(--skeleton-area)" />
+        <animate attributeName="x1" from="-200" to="450" dur="1.8s" repeatCount="indefinite" />
+        <animate attributeName="x2" from="0"    to="650" dur="1.8s" repeatCount="indefinite" />
+      </linearGradient>
+    </defs>
+    <g class="skel-breathe">
+      <!-- Faint area fill beneath the wave -->
+      <path
+        d="M0 145 C55 138 78 112 128 106 C178 100 192 118 212 113
+           C232 108 258 66 292 70 C326 74 358 50 400 46 V200 H0 Z"
+        fill="url(#area-shimmer)"
+      />
+      <!-- Wave line -->
+      <path
+        d="M0 145 C55 138 78 112 128 106 C178 100 192 118 212 113
+           C232 108 258 66 292 70 C326 74 358 50 400 46"
+        fill="none"
+        stroke="url(#line-shimmer)"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </g>
+  </svg>
+</div>
+```
+
+```scss
+.chart-skeleton {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  z-index: 2; // above LWC canvas, below error overlay
+  pointer-events: none;
+
+  &.fadeOut {
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+  }
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 65%;
+}
+
+// Breathing pulse on the skeleton SVG group
+.skel-breathe {
+  animation: skeleton-breathe 3s ease-in-out infinite;
+}
+
+@keyframes skeleton-breathe {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+// The shimmer sweep is handled by SVG <animate> on the gradient.
+// No CSS keyframe animation needed for the sweep itself.
+```
+
+**Why CSS3/SVG over Lottie:**
+
+| Approach | Pros | Cons |
+|---|---|---|
+| CSS3 + inline SVG | Zero dependencies, works offline, tiny payload, theme-aware via CSS custom properties | Less design flexibility for complex branded shapes |
+| Lottie animation | Full designer control, complex motion, After Effects workflow | Requires `lottie-web` (~50 KB gzipped), JSON asset file, harder to theme dynamically |
+
+Use CSS3/SVG as the default. Reserve Lottie only if the design team provides a branded animation that cannot be replicated with SVG paths. If Lottie is used, lazy-load it — never bundle it in the main chunk.
+
+**Skeleton color theming:**
+
+Define skeleton colors as Ionic CSS custom properties so they adapt to light/dark mode automatically:
+
+```scss
+:root {
+  --skeleton-base: rgba(var(--ion-color-medium-rgb), 0.18);
+  --skeleton-highlight: rgba(var(--ion-color-medium-rgb), 0.38);
+  --skeleton-area: rgba(var(--ion-color-medium-rgb), 0.06);
+  --skeleton-area-hi: rgba(var(--ion-color-medium-rgb), 0.15);
+}
+
+.dark {
+  --skeleton-base: rgba(var(--ion-color-medium-rgb), 0.12);
+  --skeleton-highlight: rgba(var(--ion-color-medium-rgb), 0.28);
+  --skeleton-area: rgba(var(--ion-color-medium-rgb), 0.04);
+  --skeleton-area-hi: rgba(var(--ion-color-medium-rgb), 0.10);
+}
+```
+
+**Gradient area skeleton (included by default):**
+
+The faint area fill beneath the wave line is included in the default skeleton SVG above (the `area-shimmer` gradient path). For PDP instrument charts that use gradient area fill, this previews the area shape during loading. For simpler sparkline charts that do not use area fill, remove the area `<path>` element from the skeleton and keep only the wave line.
+
+**Component ownership:** The animated chart skeleton lives inside `lib-line-chart`. It is a visual concern — the wrapper decides how to render the loading state internally. The parent only passes `state = 'loading'` and optionally `lkgData`. The parent has no knowledge of the skeleton implementation.
+
+#### 3.2.2 Warm Start Loading (LKG + Progress Indicator)
+
+This is the preferred path and the most common one after the first session. The store holds last-known-good data from a prior API call (persisted in memory or cache). The chart renders it instantly with zero delay.
+
 Wrapper behavior:
 
-- Render the chart container at its final height immediately. No layout shift.
-- If `lkgData` is provided: show the LKG series immediately, overlay a subtle loading indicator (shimmer bar or spinner at top edge). This is the preferred path.
-- If no `lkgData`: render an empty chart canvas (no series data) with a shimmer overlay or skeleton placeholder.
-- When `state` transitions to `success` and `data` arrives: call `series.setData(fullData)` once (initial load), then all subsequent updates use `series.update()`.
+- Render the LKG series immediately using `series.setData(lkgData)` on first mount, or keep the existing series visible if the chart instance is retained.
+- Show a subtle, non-blocking progress indicator that communicates "refreshing" without obscuring the chart. Options ranked by intrusiveness (least to most):
+  1. **Thin animated bar at the top edge** of the chart container (2–3 px height, primary color, indeterminate progress animation). This is the recommended default — minimal, familiar, and non-distracting.
+  2. **Subtle opacity pulse** on the entire series line (brief, slow pulse at 0.85–1.0 opacity). More organic but harder to distinguish from normal rendering on some devices.
+  3. **Small spinner icon** anchored to a corner of the chart container. Acceptable but more visually heavy than a progress bar.
+- Do **not** overlay a shimmer, skeleton, or translucent mask. The LKG chart must remain fully interactive — crosshair, scrub legend, and haptics all work normally while the background refresh is in flight.
+
+When the refresh completes: transition smoothly to the new data (see Section 3.2.4).
+
+#### 3.2.3 Scrub Legend Loading State
+
+The scrub legend (fixed header above the chart) also needs a loading treatment. An empty header or "$0.00" above a loading skeleton signals "data error," not "loading."
+
+**Cold start (no LKG):**
+
+- Replace the value, change, and percent-change text with shimmer pill placeholders (rounded rectangles with the same shimmer-sweep animation as the chart skeleton).
+- The pills match the approximate width of real values (e.g., "████" for price, "███" for change) so the header does not shift when real values arrive.
+- The timestamp area shows a static "—" or similar neutral placeholder.
+
+**Warm start (LKG available):**
+
+- Show the LKG values immediately. No shimmer pills needed.
+- When fresh data arrives, the scrub legend values update reactively via signals. No visible transition needed — the values simply change in place.
+
+**Component ownership:** The scrub legend shimmer is part of the scrub legend component itself (shared UI). It reads the `state` input (or a derived `isLoading` signal) and conditionally renders shimmer pills via `@if`. No parent involvement.
+
+#### 3.2.4 Skeleton-to-Data Transition
+
+The moment data arrives is the most visible UX seam. An abrupt swap from skeleton to real chart feels jarring. A smooth crossfade makes the app feel polished and intentional.
+
+**Transition sequence (cold start → success):**
+
+1. Data arrives. Parent sets `state = 'success'` and `data = fullData`.
+2. Wrapper calls `series.setData(fullData)` on the LWC chart instance (which was already created but had no data).
+3. Wrapper sets an internal `isTransitioning` signal to `true`.
+4. The skeleton overlay fades out over ~200 ms via CSS `opacity` transition (the `.fadeOut` class in Section 3.2.1).
+5. Simultaneously, the real chart canvas beneath is already painted by LWC. The fade reveals it in place — no positional shift.
+6. After the transition completes (CSS `transitionend` event or a `setTimeout` safety net), remove the skeleton from the DOM entirely to avoid stacking context and pointer-event issues.
+7. Wrapper sets `isTransitioning` to `false`. The chart is now fully interactive.
+
+**Transition sequence (warm start → fresh data):**
+
+No visible transition. The data patches silently via `series.update()` or `series.setData()`. The user sees the chart update in place. At most, the thin progress bar at the top edge disappears.
+
+**Implementation:**
+
+```typescript
+// Inside lib-line-chart wrapper
+protected readonly isTransitioning = signal(false);
+protected readonly showSkeleton = computed(() =>
+  this.state() === 'loading' && !this.lkgData() && !this.isTransitioning()
+);
+protected readonly showSkeletonFadeOut = computed(() =>
+  this.isTransitioning()
+);
+```
+
+```html
+@if (showSkeleton() || showSkeletonFadeOut()) {
+  <div class="chart-skeleton" [class.fadeOut]="showSkeletonFadeOut()">
+    <!-- SVG skeleton from §3.2.1 (wave + area + animated shimmer) -->
+  </div>
+}
+```
+
+**Timing rule:** Keep the crossfade under 250 ms. Longer feels sluggish. Shorter than 100 ms is imperceptible and wastes the effort. 200 ms is the sweet spot — fast enough to feel immediate, slow enough for the eye to register a smooth reveal.
+
+#### 3.2.5 Signal Store Integration — Visual State Derivation
+
+The four chart visual states (`loading`, `success`, `empty`, `error`) are never stored as raw state in the domain store. They are **derived** from the store's async data signals using `withComputed`. This follows the NgRx Signals principle: do not store derived data.
+
+**Standard async state shape in the domain store:**
+
+```typescript
+withState({
+  chartData: null as SeriesData[] | null,
+  chartLoading: false,
+  chartError: null as string | null,
+  chartLkgData: null as SeriesData[] | null,
+  selectedTimeframe: '1D' as Timeframe,
+})
+```
+
+**Derived chart state via `withComputed`:**
+
+```typescript
+withComputed((store) => ({
+  // The single derived signal the parent passes to lib-line-chart
+  chartState: computed((): ChartVisualState => {
+    if (store.chartLoading()) return 'loading';
+    if (store.chartError()) return 'error';
+    if (!store.chartData() || store.chartData()!.length === 0) return 'empty';
+    return 'success';
+  }),
+
+  // Convenience signals for the parent template
+  hasChartLkg: computed(() => !!store.chartLkgData()?.length),
+}))
+```
+
+**Why derived, not stored:**
+
+- If the store method sets `chartLoading: true` and later `chartData: [...]` + `chartLoading: false`, the computed `chartState` transitions automatically: `'loading'` → `'success'`. No extra `patchState({ chartState: 'success' })` call needed.
+- If the store method sets `chartError: 'Network timeout'` + `chartLoading: false`, `chartState` becomes `'error'` automatically.
+- There is exactly one source of truth. The visual state cannot drift from the underlying data signals because it is recomputed on every change.
+
+**Store method pattern (load with tapResponse):**
+
+```typescript
+withMethods((store, repo = inject(ChartRepository)) => ({
+  loadChart: rxMethod<Timeframe>((tf$) =>
+    tf$.pipe(
+      tap((tf) => patchState(store, {
+        chartLoading: true,
+        chartError: null,
+        selectedTimeframe: tf,
+      })),
+      switchMap((tf) =>
+        repo.getChartData$(tf).pipe(
+          tapResponse({
+            next: (data) => patchState(store, {
+              chartData: data,
+              chartLkgData: data, // cache as LKG for next load
+            }),
+            error: (e) => patchState(store, {
+              chartError: normalizeError(e),
+            }),
+            finalize: () => patchState(store, { chartLoading: false }),
+          })
+        )
+      )
+    )
+  ),
+}))
+```
+
+**Parent template wiring:**
+
+```html
+<lib-line-chart
+  [state]="store.chartState()"
+  [data]="store.chartData() ?? []"
+  [lkgData]="store.chartLkgData()"
+  [timeframe]="store.selectedTimeframe()"
+  [baselineValue]="store.baseline()"
+  (retry)="store.loadChart(store.selectedTimeframe())"
+/>
+```
+
+The parent is a thin wiring layer. It reads computed signals from the store and passes them as inputs. It does not contain state derivation logic, loading flags, or conditional checks. The store owns the async state machine; the wrapper owns the visual rendering.
 
 ### 3.3 Visual State: Success
 
@@ -152,15 +440,16 @@ Wrapper behavior:
 
 | From | To | Wrapper Action |
 |---|---|---|
-| `loading` | `success` | `series.setData(fullData)`, remove loading overlay |
-| `loading` | `error` | Show error overlay (over LKG if available, otherwise blank canvas) |
-| `loading` | `empty` | Synthesize flat line, remove loading overlay |
-| `success` | `loading` | Keep current series visible, show subtle loading indicator (no clear) |
+| `loading` (cold) | `success` | `series.setData(fullData)`, crossfade skeleton out (200 ms), reveal chart |
+| `loading` (warm) | `success` | `series.setData(fullData)` or patch via `series.update()`, remove progress bar |
+| `loading` | `error` | Show error overlay (over LKG if available, otherwise over skeleton) |
+| `loading` | `empty` | Crossfade skeleton out, synthesize flat line |
+| `success` | `loading` | Keep current series visible (warm start), show thin progress bar, no data clear |
 | `success` | `error` | Show error overlay over existing series (dimmed) |
-| `error` | `loading` | Show loading indicator, keep dimmed series if available |
-| Any | `success` | Apply data, clear all overlays |
+| `error` | `loading` | Show loading indicator (warm if LKG available, cold if not), keep dimmed series if available |
+| Any | `success` | Apply data, clear all overlays and skeleton |
 
-Critical rule: the chart container height is constant across all state transitions. Overlays are absolutely positioned inside the chart container. No external layout elements (cards, banners) replace the chart area.
+Critical rule: the chart container height is constant across all state transitions. Overlays and skeletons are absolutely positioned inside the chart container. No external layout elements (cards, banners) replace the chart area.
 
 ---
 
@@ -470,7 +759,8 @@ If LWC crosshair line styling is insufficient (limited to color, width, dash sty
 
 These overlays are rendered by the wrapper based on the `state` input. They are positioned inside the chart container using absolute positioning and centered with flexbox.
 
-- **Loading overlay:** shimmer bar or subtle spinner. Must not obscure LKG data if present. Positioned at the top edge or as a translucent full-area overlay.
+- **Cold start loading overlay:** animated chart skeleton (SVG wave path with shimmer gradient). See Section 3.2.1 for design, theming, and fade-out behavior. Positioned as a full-area overlay at `z-index: 2`.
+- **Warm start loading indicator:** thin animated progress bar at the top edge of the chart container (2–3 px). Does not obscure the LKG series beneath. See Section 3.2.2.
 - **Error overlay:** centered card with a "Refresh" button. If prior series data exists, the chart canvas behind the overlay is dimmed but visible.
 
 Both overlays maintain the chart container height. They are shown/hidden via CSS or `@if` control flow, never by adding/removing the chart container element itself.
@@ -853,10 +1143,14 @@ Navigate in and out of the chart page repeatedly and verify:
 
 ### 13.4 Visual State Tests
 
-- Verify loading state renders at full chart height with no layout shift.
+- Verify cold start loading renders the animated chart skeleton (wave line with shimmer sweep) at full chart height.
+- Verify warm start loading shows LKG data immediately with only a thin progress bar.
+- Verify skeleton-to-data transition is a smooth 200 ms crossfade with no layout shift.
+- Verify scrub legend shows shimmer pills during cold start, real LKG values during warm start.
 - Verify error state keeps prior series visible (dimmed) with centered retry button.
 - Verify empty state renders a flat line at the correct placeholder value.
 - Verify transitions between all four states produce no flicker or height change.
+- Verify skeleton theme colors adapt correctly when toggling between light and dark mode during loading.
 
 ---
 
@@ -887,7 +1181,12 @@ Navigate in and out of the chart page repeatedly and verify:
 
 ### Visual States
 
-- [ ] Loading: chart container at full height, shimmer overlay, LKG series shown if available
+- [ ] Cold start loading: animated SVG chart skeleton with shimmer gradient, themed via `--skeleton-base` / `--skeleton-highlight` CSS custom properties
+- [ ] Cold start skeleton adapts to light/dark mode automatically
+- [ ] Warm start loading: LKG data shown instantly, thin animated progress bar at top edge, chart remains fully interactive
+- [ ] Skeleton-to-data transition: 200 ms CSS opacity crossfade, skeleton removed from DOM after transition
+- [ ] Scrub legend loading: shimmer pill placeholders during cold start, LKG values during warm start
+- [ ] Hot transition (success → loading → success): no visible change, silent data patch
 - [ ] Success: series rendered, overlays active, no obstructions
 - [ ] Empty: flat line synthesized from `placeholderFlatValue` across full timeframe range
 - [ ] Error: centered overlay with "Refresh" button, prior series dimmed behind overlay
@@ -943,6 +1242,14 @@ Navigate in and out of the chart page repeatedly and verify:
 - [ ] Chart container has a stable, explicit CSS height
 - [ ] No canvas overflow on keyboard open/close or orientation change
 
+### Signal Store Integration
+
+- [ ] Chart visual state (`loading`, `success`, `empty`, `error`) is derived via `withComputed`, never stored as raw state
+- [ ] Store exposes `chartState`, `chartData`, `chartLkgData`, `selectedTimeframe`, `baseline` as computed or state signals
+- [ ] Parent template is thin wiring only — reads store signals and passes to `lib-line-chart` inputs
+- [ ] `loadChart` method uses `tapResponse` with `finalize` to guarantee `chartLoading: false` on both success and error
+- [ ] LKG data cached in store on each successful load for instant warm start on next visit
+
 ---
 
 ## 15. Guardrails
@@ -960,9 +1267,21 @@ These rules prevent regressions and architectural drift.
 **State and overlay rules:**
 
 - The chart container height is constant across all visual states. No layout shift on state transitions.
+- Cold start loading uses an animated chart skeleton (SVG wave + shimmer), never a plain gray box, generic spinner, or empty canvas.
+- Warm start loading shows LKG data immediately with a non-blocking progress indicator. The chart remains fully interactive during refresh.
+- Skeleton-to-data transition is a 200 ms CSS opacity crossfade. Never hard-swap from skeleton to chart.
+- The skeleton is removed from the DOM after the fade-out completes. Do not leave hidden skeleton elements stacking in the DOM.
+- Scrub legend shows shimmer pill placeholders during cold start, not empty text or "$0.00".
 - Error and loading overlays render inside the chart container, not as external replacements.
 - LKG data is always shown when available, even during loading and error states.
 - Empty state uses a synthesized flat line, never an empty canvas or a "no data" card that replaces the chart.
+
+**Signal store rules:**
+
+- Chart visual state is always derived via `withComputed` from underlying async signals (`chartLoading`, `chartError`, `chartData`). Never store the visual state string directly.
+- Always clear `chartLoading` in `finalize` of `tapResponse` to prevent stuck loading states.
+- Cache successful chart data as `chartLkgData` in the store so the next load is a warm start.
+- The parent component is a thin signal-wiring layer. No state derivation logic, no conditional checks, no loading flags in the parent template — those are store concerns.
 
 **Data and update rules:**
 
