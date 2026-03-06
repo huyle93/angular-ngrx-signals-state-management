@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chart Skeleton — Loading Animation</title>
+  <!--
+    Interactive demo of the chart loading skeleton described in charts-strategy.md §3.2.
+    Open this file in a browser to preview the animation.
+
+    Demo states:
+      1. Cold start  — animated SVG skeleton with shimmer + scrub legend pills
+      2. Data arrives — 220 ms crossfade to real chart
+      3. Warm start   — real chart instantly visible with thin progress bar
+
+    Toggle dark mode to verify theming.
+
+    PRODUCTION: replace the --skel-* and --chart-* CSS custom properties
+    with Ionic theme tokens (see comments in the :root block).
+  -->
+
+  <style>
+    /* ==================================================================
+       THEME TOKENS
+
+       Production — swap these literals for Ionic CSS custom properties:
+
+         :root {
+           --skel-line:     rgba(var(--ion-color-medium-rgb), 0.18);
+           --skel-line-hi:  rgba(var(--ion-color-medium-rgb), 0.38);
+           --skel-area:     rgba(var(--ion-color-medium-rgb), 0.06);
+           --skel-area-hi:  rgba(var(--ion-color-medium-rgb), 0.15);
+           --skel-pill:     rgba(var(--ion-color-medium-rgb), 0.12);
+           --skel-pill-hi:  rgba(var(--ion-color-medium-rgb), 0.24);
+         }
+
+         .dark, [data-theme="dark"] {
+           --skel-line:     rgba(var(--ion-color-medium-rgb), 0.12);
+           --skel-line-hi:  rgba(var(--ion-color-medium-rgb), 0.28);
+           --skel-area:     rgba(var(--ion-color-medium-rgb), 0.04);
+           --skel-area-hi:  rgba(var(--ion-color-medium-rgb), 0.10);
+           --skel-pill:     rgba(var(--ion-color-medium-rgb), 0.10);
+           --skel-pill-hi:  rgba(var(--ion-color-medium-rgb), 0.22);
+         }
+       ================================================================== */
+
+    :root {
+      --skel-line:      rgba(142, 142, 147, 0.20);
+      --skel-line-hi:   rgba(142, 142, 147, 0.42);
+      --skel-area:      rgba(142, 142, 147, 0.06);
+      --skel-area-hi:   rgba(142, 142, 147, 0.15);
+      --skel-pill:      rgba(142, 142, 147, 0.12);
+      --skel-pill-hi:   rgba(142, 142, 147, 0.26);
+      --bg:             #ffffff;
+      --text:           #1c1c1e;
+      --text-sec:       #8e8e93;
+      --chart-line:     #34c759;
+      --chart-area-top: rgba(52, 199, 89, 0.22);
+      --chart-area-bot: rgba(52, 199, 89, 0);
+    }
+
+    .dark {
+      --skel-line:      rgba(174, 174, 178, 0.14);
+      --skel-line-hi:   rgba(174, 174, 178, 0.32);
+      --skel-area:      rgba(174, 174, 178, 0.04);
+      --skel-area-hi:   rgba(174, 174, 178, 0.11);
+      --skel-pill:      rgba(174, 174, 178, 0.10);
+      --skel-pill-hi:   rgba(174, 174, 178, 0.22);
+      --bg:             #000000;
+      --text:           #f2f2f7;
+      --text-sec:       #8e8e93;
+      --chart-line:     #30d158;
+      --chart-area-top: rgba(48, 209, 88, 0.18);
+      --chart-area-bot: rgba(48, 209, 88, 0);
+    }
+
+    /* ==================================================================
+       BASE
+       ================================================================== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0;
+      transition: background 0.2s;
+    }
+
+    .frame { width: 100%; max-width: 420px; padding: 0 16px; }
+
+    /* ==================================================================
+       SCRUB LEGEND — SHIMMER PILLS (§3.2.3)
+
+       During cold start, price / change / timestamp text are replaced
+       with animated pill placeholders that match the skeleton shimmer
+       rhythm. Pills approximate real value widths to prevent layout
+       shift when data arrives.
+       ================================================================== */
+    .scrub-legend { padding: 0 0 10px; }
+
+    .shimmer-pill {
+      display: block;
+      border-radius: 4px;
+      background: linear-gradient(
+        90deg,
+        var(--skel-pill) 25%,
+        var(--skel-pill-hi) 50%,
+        var(--skel-pill) 75%
+      );
+      background-size: 400% 100%;
+      animation: pill-sweep 1.6s ease-in-out infinite;
+    }
+
+    .pill-lg  { width: 110px; height: 30px; margin-bottom: 6px; }
+    .pill-md  { width: 155px; height: 17px; margin-bottom: 4px; }
+    .pill-sm  { width: 70px;  height: 13px; }
+
+    @keyframes pill-sweep {
+      0%   { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    /* ==================================================================
+       CHART CONTAINER — FIXED HEIGHT (§3.2 invariant)
+
+       Height never changes across loading / success / empty / error.
+       Skeleton and real chart are both absolutely positioned inside.
+       ================================================================== */
+    .chart-box {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* ==================================================================
+       CHART SKELETON (§3.2.1)
+
+       Absolutely positioned inside chart container.
+       z-index: 2 — above LWC canvas (1), below error overlay (3).
+
+       Animation layers:
+         1. SVG <animate> on gradients  → shimmer sweep (1.8 s)
+         2. CSS .skel-breathe           → gentle opacity pulse (3 s)
+         3. CSS .fade-out transition    → 220 ms exit crossfade
+
+       All animations are compositor-friendly (opacity, transform).
+       No repaints, no layout triggers.
+       ================================================================== */
+    .chart-skeleton {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      opacity: 1;
+      will-change: opacity;
+      transition: opacity 220ms ease-out;
+    }
+
+    .chart-skeleton.fade-out { opacity: 0; }
+
+    .chart-skeleton svg {
+      width: 100%;
+      height: 65%;
+    }
+
+    .skel-breathe {
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.7; }
+      50%      { opacity: 1; }
+    }
+
+    /* ==================================================================
+       WARM-START PROGRESS BAR (§3.2.2)
+
+       Thin indeterminate bar at the top edge of the chart container.
+       Shown when LKG data is visible and a background refresh is
+       in flight. Does not obscure the chart beneath.
+       ================================================================== */
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 30%;
+      height: 2.5px;
+      z-index: 3;
+      border-radius: 2px;
+      background: var(--chart-line);
+      animation: bar-slide 1.2s ease-in-out infinite;
+      opacity: 0;
+      transition: opacity 150ms;
+      pointer-events: none;
+    }
+
+    .progress-bar.active { opacity: 1; }
+
+    @keyframes bar-slide {
+      0%   { left: -30%; }
+      100% { left: 100%; }
+    }
+
+    /* ==================================================================
+       REAL CHART (underneath skeleton — §3.2.4 reveals it)
+
+       In production this is the LWC <canvas>. The demo uses a
+       static SVG to visualize the crossfade transition.
+       ================================================================== */
+    .real-chart {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 260ms ease-out;
+    }
+
+    .real-chart.visible { opacity: 1; }
+
+    .real-chart svg {
+      width: 100%;
+      height: 65%;
+    }
+
+    /* ==================================================================
+       REDUCED MOTION
+
+       SVG SMIL <animate> cannot be paused by CSS media query.
+       In production, conditionally omit the <animate> elements
+       via an Angular @if check on prefers-reduced-motion, or
+       degrade gracefully — the skeleton is short-lived (~1-3 s).
+       ================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      .shimmer-pill,
+      .skel-breathe,
+      .progress-bar { animation: none; }
+      .chart-skeleton { transition-duration: 0ms; }
+      .real-chart { transition-duration: 0ms; }
+    }
+
+    /* ==================================================================
+       DEMO CHROME (not part of production code)
+       ================================================================== */
+    .label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: var(--text-sec);
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .controls button {
+      padding: 9px 16px;
+      border: 1.5px solid rgba(142, 142, 147, 0.25);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.08s, background 0.12s;
+    }
+
+    .controls button:active { transform: scale(0.95); }
+
+    .controls button.accent {
+      background: #007aff;
+      border-color: #007aff;
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="frame">
+    <div class="label" style="margin-bottom: 12px">Chart Loading Skeleton — Cold Start</div>
+
+    <!-- =====================================================
+         SCRUB LEGEND — shimmer pill placeholders (§3.2.3)
+
+         In Angular: conditionally render pills via @if when
+         state === 'loading' && !lkgData. Otherwise show real
+         values from the store's signals.
+         ===================================================== -->
+    <div class="scrub-legend" id="legend">
+      <div class="shimmer-pill pill-lg"></div>
+      <div class="shimmer-pill pill-md"></div>
+      <div class="shimmer-pill pill-sm"></div>
+    </div>
+
+    <!-- =====================================================
+         CHART CONTAINER — fixed 260 px (§3.2 invariant)
+
+         Contains three stacked layers:
+           z-index 1: real chart (LWC <canvas> in production)
+           z-index 2: skeleton overlay
+           z-index 3: warm-start progress bar
+         ===================================================== -->
+    <div class="chart-box">
+
+      <!-- Warm-start progress bar (hidden by default) -->
+      <div class="progress-bar" id="bar"></div>
+
+      <!-- Real chart — hidden until data arrives (§3.2.4) -->
+      <div class="real-chart" id="chart">
+        <svg viewBox="0 0 400 200" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="var(--chart-area-top)" />
+              <stop offset="100%" stop-color="var(--chart-area-bot)" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M0 148 C45 140 70 122 110 115 C150 108 168 96 198 90
+               C228 84 248 102 268 96 C288 90 315 58 350 52
+               C385 46 395 45 400 43 V200 H0 Z"
+            fill="url(#cg)"
+          />
+          <path
+            d="M0 148 C45 140 70 122 110 115 C150 108 168 96 198 90
+               C228 84 248 102 268 96 C288 90 315 58 350 52
+               C385 46 395 45 400 43"
+            fill="none" stroke="var(--chart-line)" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+
+      <!-- =====================================================
+           SKELETON OVERLAY (§3.2.1)
+
+           Two animated SVG paths inside a breathing <g> group:
+             1. Area fill — faint gradient beneath the wave
+             2. Wave line — chart-shaped silhouette
+
+           Shimmer sweep is driven by SVG <animate> on the
+           <linearGradient> x1/x2 attributes (1.8 s, infinite).
+           Breathing pulse is a CSS opacity animation (3 s).
+
+           In Angular, wrap this in:
+             @if (showSkeleton() || showSkeletonFadeOut()) { ... }
+           Apply [class.fadeOut]="showSkeletonFadeOut()" on the
+           .chart-skeleton div to trigger the 220 ms crossfade.
+           ===================================================== -->
+      <div class="chart-skeleton" id="skel">
+        <svg viewBox="0 0 400 200" preserveAspectRatio="none">
+          <defs>
+            <!--
+              LINE SHIMMER GRADIENT
+              gradientUnits="userSpaceOnUse" → coordinates match the viewBox.
+              The 200-unit-wide highlight band sweeps from x = -200 to x = 650
+              across the 400-unit viewBox in 1.8 s.
+            -->
+            <linearGradient id="ls" gradientUnits="userSpaceOnUse"
+                            x1="-200" y1="0" x2="0" y2="0">
+              <stop offset="0%"   stop-color="var(--skel-line)" />
+              <stop offset="50%"  stop-color="var(--skel-line-hi)" />
+              <stop offset="100%" stop-color="var(--skel-line)" />
+              <animate attributeName="x1" from="-200" to="450"
+                       dur="1.8s" repeatCount="indefinite" />
+              <animate attributeName="x2" from="0"    to="650"
+                       dur="1.8s" repeatCount="indefinite" />
+            </linearGradient>
+
+            <!--
+              AREA SHIMMER GRADIENT (synchronized with line)
+              Same sweep timing so line and area highlight move as one.
+            -->
+            <linearGradient id="as" gradientUnits="userSpaceOnUse"
+                            x1="-200" y1="0" x2="0" y2="0">
+              <stop offset="0%"   stop-color="var(--skel-area)" />
+              <stop offset="50%"  stop-color="var(--skel-area-hi)" />
+              <stop offset="100%" stop-color="var(--skel-area)" />
+              <animate attributeName="x1" from="-200" to="450"
+                       dur="1.8s" repeatCount="indefinite" />
+              <animate attributeName="x2" from="0"    to="650"
+                       dur="1.8s" repeatCount="indefinite" />
+            </linearGradient>
+          </defs>
+
+          <g class="skel-breathe">
+            <!-- Area fill — faint gradient beneath the wave -->
+            <path
+              d="M0 145 C55 138 78 112 128 106 C178 100 192 118 212 113
+                 C232 108 258 66 292 70 C326 74 358 50 400 46 V200 H0 Z"
+              fill="url(#as)"
+            />
+            <!-- Wave line — chart-shaped silhouette -->
+            <path
+              d="M0 145 C55 138 78 112 128 106 C178 100 192 118 212 113
+                 C232 108 258 66 292 70 C326 74 358 50 400 46"
+              fill="none"
+              stroke="url(#ls)"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- =====================================================
+         DEMO CONTROLS (not part of production code)
+         ===================================================== -->
+    <div class="controls">
+      <button class="accent" onclick="arrive()">Data Arrived</button>
+      <button onclick="warm()">Warm Start</button>
+      <button onclick="dark()">Dark / Light</button>
+      <button onclick="reset()">Reset</button>
+    </div>
+    <div class="label" id="st" style="margin-top: 14px">state: cold-start loading</div>
+  </div>
+
+  <!-- =====================================================
+       DEMO SCRIPT (not part of production code)
+
+       Simulates the §3.2.4 transition sequence:
+         1. Real chart becomes visible (opacity 0 → 1)
+         2. Skeleton fades out (opacity 1 → 0, 220 ms)
+         3. Scrub legend pills swap for real values
+         4. Skeleton removed from DOM after transitionend
+       ===================================================== -->
+  <script>
+    const skel   = document.getElementById('skel');
+    const chart  = document.getElementById('chart');
+    const bar    = document.getElementById('bar');
+    const legend = document.getElementById('legend');
+    const st     = document.getElementById('st');
+
+    const PILLS = [
+      '<div class="shimmer-pill pill-lg"></div>',
+      '<div class="shimmer-pill pill-md"></div>',
+      '<div class="shimmer-pill pill-sm"></div>',
+    ].join('');
+
+    const VALUES = [
+      '<div style="font-size:28px;font-weight:700">$12,847.32</div>',
+      '<div style="font-size:14px;font-weight:500;color:var(--chart-line)">',
+      '+$284.15 (+2.26%) Today</div>',
+    ].join('');
+
+    // Cold start → data arrival (§3.2.4 transition sequence)
+    function arrive() {
+      chart.classList.add('visible');        // 1. reveal real chart
+      skel.classList.add('fade-out');        // 2. fade skeleton 220 ms
+      legend.innerHTML = VALUES;            // 3. swap pills → values
+      st.textContent = 'state: success — skeleton crossfade 220 ms';
+
+      // 4. remove skeleton from DOM after fade completes
+      skel.addEventListener('transitionend', function handler() {
+        skel.style.display = 'none';
+        skel.removeEventListener('transitionend', handler);
+      });
+    }
+
+    // Warm start demo (§3.2.2)
+    function warm() {
+      skel.style.display = 'none';
+      skel.classList.add('fade-out');
+      chart.classList.add('visible');
+      legend.innerHTML = VALUES;
+      bar.classList.add('active');
+      st.textContent = 'state: warm-start — LKG visible, refreshing…';
+
+      setTimeout(function () {
+        bar.classList.remove('active');
+        st.textContent = 'state: success — refresh complete, bar dismissed';
+      }, 2400);
+    }
+
+    // Dark / light toggle
+    function dark() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    // Reset to cold start
+    function reset() {
+      skel.classList.remove('fade-out');
+      skel.style.display = '';
+      chart.classList.remove('visible');
+      bar.classList.remove('active');
+      legend.innerHTML = PILLS;
+      st.textContent = 'state: cold-start loading';
+    }
+  </script>
+</body>
+</html>
