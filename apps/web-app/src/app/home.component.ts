@@ -30,6 +30,12 @@ import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/c
             <p>Complex state management with CRUD operations</p>
             <a href="/todo" class="btn">View Example →</a>
           </div>
+
+          <div class="card">
+            <h4>Price Ticker (Odometer)</h4>
+            <p>CSS-driven rolling digits with a signal-based 1-second price stream</p>
+            <a href="/ticker" class="btn">View Example →</a>
+          </div>
         </div>
       </section>
 

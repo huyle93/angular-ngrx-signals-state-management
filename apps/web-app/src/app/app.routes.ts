@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { CounterComponent } from './counter.component';
 import { TodoComponent } from './todo.component';
+import { PriceTickerDemoComponent } from './price-ticker-demo.component';
 
 export const appRoutes: Route[] = [
   {
@@ -15,6 +16,10 @@ export const appRoutes: Route[] = [
   {
     path: 'todo',
     component: TodoComponent,
+  },
+  {
+    path: 'ticker',
+    component: PriceTickerDemoComponent,
   },
   {
     path: '**',
