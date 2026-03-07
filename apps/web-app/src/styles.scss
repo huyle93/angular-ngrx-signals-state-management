@@ -1,1 +1,15 @@
 /* You can add global styles to this file, and also import other style files */
+
+.price-flash-up {
+	color: var(--ion-color-success, #2e7d32) !important;
+	transition: color 0s !important;
+}
+
+.price-flash-down {
+	color: var(--ion-color-danger, #c62828) !important;
+	transition: color 0s !important;
+}
+
+app-price-ticker {
+	transition: color 500ms ease-out;
+}
