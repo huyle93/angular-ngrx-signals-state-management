@@ -54,10 +54,14 @@ interface TickerSegment {
 
       .ticker-wrapper {
         display: flex;
-        align-items: baseline;
+        align-items: center;
       }
 
       .static-char {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 1em;
         line-height: 1em;
       }
 
@@ -83,6 +87,12 @@ interface TickerSegment {
         align-items: center;
         justify-content: center;
         height: 1em;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .digit-strip {
+          transition-duration: 0ms !important;
+        }
       }
     `,
   ],

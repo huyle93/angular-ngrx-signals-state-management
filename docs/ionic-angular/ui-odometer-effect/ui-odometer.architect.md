@@ -95,10 +95,14 @@ interface TickerSegment {
 
     .ticker-wrapper {
       display: flex;
-      align-items: baseline;
+      align-items: center;
     }
 
     .static-char {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 1em;
       line-height: 1em;
     }
 
@@ -124,6 +128,12 @@ interface TickerSegment {
       display: flex;
       justify-content: center;
       align-items: center;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .digit-strip {
+        transition-duration: 0ms !important;
+      }
     }
   `]
 })
@@ -172,6 +182,10 @@ The `transition-duration` style binding controls whether the strip slides smooth
 Because `will-change: transform` and `translate3d` are used, the browser promotes each strip to its own compositor layer. The animation runs on the GPU without triggering layout or paint on the main thread.
 
 A screen-reader-only span contains the full formatted value for accessibility. The visual ticker is marked `aria-hidden="true"`.
+
+To keep visual alignment stable across fonts, static characters (currency symbol, commas, decimal point) use the same `1em` box model as digits, centered with flex alignment.
+
+For accessibility, reduced-motion users receive instant ticker updates via `@media (prefers-reduced-motion: reduce)`.
 
 ### Design Decisions
 
@@ -290,9 +304,17 @@ Add to the application's `global.scss`. These classes bridge the directive's hos
 app-price-ticker {
   transition: color 500ms ease-out;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  app-price-ticker {
+    transition: color 0ms !important;
+  }
+}
 ```
 
 The `!important` override ensures the flash color takes priority over any inherited or scoped text color. `transition: color 0s` makes the color change instant on application. The `transition: color 500ms ease-out` on the host element produces a gradual fade back to the default color when the class is removed.
+
+The reduced-motion media query removes the color fade for motion-sensitive users.
 
 ---
 
