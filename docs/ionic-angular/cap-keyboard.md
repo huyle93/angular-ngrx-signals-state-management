@@ -551,38 +551,9 @@ CTA class -- the mixin provides all of these.
 
 .trade-ticket-cta {
   @include kbd.keyboard-cta();
-}
 
-// Keep any existing CTA-internal layout styles (flexbox, gap, typography).
-// Only remove the positioning/transition/safe-area styles that the mixin now owns.
-
-.trade-ticket-cta__inner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.trade-ticket-cta__meta {
-  flex: 1;
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.trade-ticket-cta__account {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.trade-ticket-cta__buying-power {
-  font-size: 0.8125rem;
-  opacity: 0.72;
-}
-
-.trade-ticket-cta__submit {
-  flex-shrink: 0;
+  // Keep all existing CTA-internal layout styles (flexbox, gap, typography) as-is.
+  // Only remove hand-written position/bottom/transition/safe-area styles -- the mixin owns those.
 }
 ```
 
