@@ -37,15 +37,24 @@
     - [11.1 Changes to trade-ticket.page.ts](#111-changes-to-trade-ticketpagets)
     - [11.2 Changes to trade-ticket.page.html](#112-changes-to-trade-ticketpagehtml)
     - [11.3 Changes to trade-ticket.page.scss](#113-changes-to-trade-ticketpagescss)
-  - [12. iOS Accessory Bar Removal](#12-ios-accessory-bar-removal)
-  - [13. Keyboard Auto-Focus Behavior](#13-keyboard-auto-focus-behavior)
-  - [14. Input Handling](#14-input-handling)
-  - [15. QA Acceptance Criteria](#15-qa-acceptance-criteria)
+  - [12. Android Keyboard Issue -- Diagnosis and Fix](#12-android-keyboard-issue----diagnosis-and-fix)
+    - [12.1 Symptoms](#121-symptoms)
+    - [12.2 Root Cause](#122-root-cause)
+    - [12.3 Strategy: Platform Split](#123-strategy-platform-split)
+    - [12.4 Fix: Android Native Soft Input Override](#124-fix-android-native-soft-input-override)
+    - [12.5 Fix: CSS Viewport Lock](#125-fix-css-viewport-lock)
+    - [12.6 Fix: Disable Ionic scrollAssist](#126-fix-disable-ionic-scrollassist)
+    - [12.7 CSS Anti-Patterns to Audit](#127-css-anti-patterns-to-audit)
+    - [12.8 Android Verification](#128-android-verification)
+  - [13. iOS Accessory Bar Removal](#13-ios-accessory-bar-removal)
+  - [14. Keyboard Auto-Focus Behavior](#14-keyboard-auto-focus-behavior)
+  - [15. Input Handling](#15-input-handling)
+  - [16. QA Acceptance Criteria](#16-qa-acceptance-criteria)
     - [iOS](#ios)
     - [Android](#android)
     - [Functional (both platforms)](#functional-both-platforms)
     - [Consistency (across pages)](#consistency-across-pages)
-  - [16. Common Mistakes](#16-common-mistakes)
+  - [17. Common Mistakes](#17-common-mistakes)
 
 ---
 
@@ -115,6 +124,11 @@ pattern, the lifecycle management (listen, track, teardown) and the CTA styling 
 shared utility. Pages inject the service and bind to its signals. This follows DRY and the
 project's modular Nx library structure.
 
+**Platform-split strategy:** On Android, `resize: 'none'` does not reliably report keyboard
+height (see Section 12). The fix uses `adjustResize` at the native Android level, combined
+with a CSS viewport lock to prevent content shift. The service detects the platform and
+adjusts `ctaBottomOffset()` accordingly. iOS behavior remains unchanged.
+
 ---
 
 ## 4. Scope Boundaries
@@ -179,7 +193,6 @@ const config: CapacitorConfig = {
     // ... existing plugin entries
     Keyboard: {
       resize: 'none',
-      resizeOnFullScreen: true,
     },
   },
 };
@@ -191,8 +204,11 @@ export default config;
 
 | Key | Value | Why |
 |---|---|---|
-| `resize` | `'none'` | Prevents iOS from resizing or scrolling the WebView when the keyboard appears. Required for page stability across all screens. |
-| `resizeOnFullScreen` | `true` | Android workaround: ensures resize events fire correctly when the app runs in fullscreen or has status-bar overlay. |
+| `resize` | `'none'` | Prevents the Capacitor plugin from programmatically resizing `document.body` or adjusting Ionic layout. On iOS, this also sets the WebView to not resize (keeping the viewport stable). On Android, the native `windowSoftInputMode` is overridden separately (see Section 12.4). |
+
+> **Removed:** `resizeOnFullScreen: true` was previously set here. It has been removed
+> because it conflicts with deterministic keyboard behavior on Android. It toggled the soft
+> input mode at runtime to detect keyboard events, causing layout flicker. See Section 12.2.
 
 ### 6.3 Re-sync after config change
 
@@ -240,7 +256,7 @@ markup, no domain state).
 
 | Rule | How it is satisfied |
 |---|---|
-| `util/` layer: no Angular UI dependencies | `KeyboardLayoutService` imports only `@angular/core` and `@capacitor/keyboard`. No Ionic, no template, no DOM. |
+| `util/` layer: no Angular UI dependencies | `KeyboardLayoutService` imports only `@angular/core`, `@capacitor/core` (platform detection), and `@capacitor/keyboard`. No Ionic, no template, no DOM. |
 | No domain state leakage | Keyboard signals are transient UI state in the service, not stored in any domain SignalStore. |
 | Feature layer owns wiring | Each page's `ionViewDidEnter` / `ionViewDidLeave` calls `attach()` / `detach()`. The service does not auto-activate. |
 
@@ -255,10 +271,16 @@ reactive signals that consuming pages bind to in their templates.
 // libs/plynk-mobile/shared/util/keyboard-layout/keyboard-layout.service.ts
 
 import { Injectable, signal, computed } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { Keyboard, KeyboardInfo, PluginListenerHandle } from '@capacitor/keyboard';
 
 /**
  * Manages native keyboard lifecycle for pages with fixed-bottom CTA bars.
+ *
+ * Platform behavior:
+ *   - iOS: resize 'none' keeps the viewport full-size. CTA offset via ctaBottomOffset().
+ *   - Android: native adjustResize shrinks the viewport. position: fixed handles CTA.
+ *     A CSS variable --keyboard-safe-height is set to lock page content height.
  *
  * Usage:
  *   1. Inject into a page component.
@@ -268,6 +290,8 @@ import { Keyboard, KeyboardInfo, PluginListenerHandle } from '@capacitor/keyboar
  */
 @Injectable({ providedIn: 'root' })
 export class KeyboardLayoutService {
+  private readonly isAndroid = Capacitor.getPlatform() === 'android';
+
   // -- Public signals (read by consuming pages) --
 
   readonly keyboardVisible = signal(false);
@@ -275,10 +299,20 @@ export class KeyboardLayoutService {
 
   /**
    * CSS bottom value for a fixed CTA bar.
-   * Returns '{height}px' when keyboard is open, '0px' when closed.
+   *
+   * iOS:     Returns '{height}px' when keyboard is open (manual offset needed).
+   * Android: Returns '0px' always (adjustResize shrinks viewport; fixed positioning handles it).
    */
   readonly ctaBottomOffset = computed(() => {
-    return this.keyboardVisible() ? `${this.keyboardHeight()}px` : '0px';
+    if (!this.keyboardVisible()) return '0px';
+
+    // On Android with adjustResize, the viewport already shrinks above the keyboard.
+    // position: fixed; bottom: 0 is correct without additional offset.
+    if (this.isAndroid) return '0px';
+
+    // On iOS with resize: 'none', the viewport stays full size.
+    // Manually offset the CTA by the keyboard height.
+    return `${this.keyboardHeight()}px`;
   });
 
   // -- Internal listener tracking --
@@ -297,7 +331,16 @@ export class KeyboardLayoutService {
     }
     this.attached = true;
 
-    // Hide iOS accessory bar (best-effort; no-op on unsupported platforms)
+    // Android: capture viewport height before keyboard opens.
+    // Pages use var(--keyboard-safe-height) to lock their height.
+    if (this.isAndroid) {
+      document.documentElement.style.setProperty(
+        '--keyboard-safe-height',
+        `${window.innerHeight}px`,
+      );
+    }
+
+    // Hide iOS accessory bar (best-effort; no-op on Android and unsupported platforms)
     try {
       await Keyboard.setAccessoryBarVisible({ isVisible: false });
     } catch {
@@ -329,6 +372,12 @@ export class KeyboardLayoutService {
     this.listeners = [];
     this.keyboardVisible.set(false);
     this.keyboardHeight.set(0);
+
+    // Android: remove viewport lock
+    if (this.isAndroid) {
+      document.documentElement.style.removeProperty('--keyboard-safe-height');
+    }
+
     this.attached = false;
   }
 }
@@ -345,6 +394,13 @@ export class KeyboardLayoutService {
   in sync with the keyboard animation, not after it.
 - The service holds zero page-specific knowledge. It does not know about CTA markup, trade
   tickets, or deposits. Pages own their own templates and bind to the service signals.
+- **Platform split:** On iOS, `resize: 'none'` keeps the viewport full-size, so the CTA
+  needs manual offset (`ctaBottomOffset` returns `'{height}px'`). On Android, `adjustResize`
+  shrinks the viewport above the keyboard, so `position: fixed; bottom: 0` already places
+  the CTA correctly (`ctaBottomOffset` returns `'0px'`). See Section 12 for full diagnosis.
+- **Viewport lock (Android):** `attach()` captures `window.innerHeight` before the keyboard
+  opens and sets `--keyboard-safe-height` on `<html>`. Pages use this CSS variable to lock
+  their height, preventing content from reflowing when the viewport shrinks.
 
 ---
 
@@ -468,6 +524,11 @@ The CTA container already exists in the page template. Add the two bindings:
 @use '@plynk-mobile/shared/ui/styles/keyboard-cta' as kbd;
 
 :host {
+  // On Android, --keyboard-safe-height locks the page to its pre-keyboard height.
+  // On iOS, the variable is unset and the fallback (100%) applies.
+  height: var(--keyboard-safe-height, 100%);
+  overflow: hidden;
+
   @include kbd.keyboard-cta-content-padding(88px);
 }
 
@@ -545,6 +606,8 @@ CTA class -- the mixin provides all of these.
 
 :host {
   display: block;
+  height: var(--keyboard-safe-height, 100%);
+  overflow: hidden;
 
   @include kbd.keyboard-cta-content-padding(88px);
 }
@@ -559,7 +622,209 @@ CTA class -- the mixin provides all of these.
 
 ---
 
-## 12. iOS Accessory Bar Removal
+## 12. Android Keyboard Issue -- Diagnosis and Fix
+
+### 12.1 Symptoms
+
+On Android (particularly Google Pixel running Android 12+), when the keyboard opens on a
+money-movement screen:
+
+- The entire page/modal content shifts upward toward the top of the screen.
+- The CTA bar may not position correctly above the keyboard, or may stay behind it.
+- The layout "jumps" or "pushes up" instead of remaining stable.
+- `keyboardHeight` may be reported as `0`, leaving the CTA hidden behind the keyboard.
+
+This does NOT happen on iOS where the same code works correctly.
+
+### 12.2 Root Cause
+
+The issue has three interacting root causes in the Capacitor + Ionic + Android stack:
+
+**1. `resize: 'none'` does not reliably report keyboard height on Android.**
+
+Capacitor's `resize: 'none'` sets `windowSoftInputMode` to `adjustNothing` on Android. The
+plugin detects keyboard height by comparing `getWindowVisibleDisplayFrame()` to the screen
+height. With `adjustNothing`, the visible frame does not change when the keyboard opens, so
+`keyboardHeight` is reported as `0`. The CTA stays at `bottom: 0px` -- behind the keyboard.
+
+**2. On some Android versions, `adjustNothing` is not fully respected.**
+
+On Android 12+ with edge-to-edge display, gesture navigation, or certain OEM WebView builds
+(particularly on Google Pixel devices), the WebView may partially resize even with
+`adjustNothing`. This creates an unpredictable hybrid state: the viewport partially shifts
+(causing content to jump) while keyboard height is still reported incorrectly.
+
+**3. `resizeOnFullScreen: true` creates conflicting resize signals.**
+
+This flag enables a workaround for keyboard detection in fullscreen mode. On Android, it can
+temporarily toggle the soft input mode to detect keyboard events, then toggle back. During
+this switching, the WebView receives mixed resize signals, causing visible flicker and
+content displacement. In combination with Ionic's fullscreen modal structure, this amplifies
+the layout instability.
+
+### 12.3 Strategy: Platform Split
+
+The iOS and Android WebView keyboard models are fundamentally different. Rather than forcing
+a single approach that fails on one platform, the fix uses a platform-aware strategy:
+
+| Platform | Capacitor `resize` | Android `windowSoftInputMode` | CTA positioning |
+|---|---|---|---|
+| iOS | `'none'` | N/A | Manual offset via `ctaBottomOffset()` using keyboard height from plugin events. Viewport stays full size. |
+| Android | `'none'` (plugin config) | `adjustResize` (native override) | Viewport shrinks above keyboard. `position: fixed; bottom: 0` places CTA correctly. `ctaBottomOffset()` returns `'0px'`. |
+
+**Why `adjustResize` on Android:**
+
+- It is the only `windowSoftInputMode` that reliably triggers keyboard height detection in
+  the Capacitor Keyboard plugin on Android.
+- The plugin detects keyboard via `getWindowVisibleDisplayFrame()`, which only changes with
+  `adjustResize`. This means `keyboardWillShow` fires with an accurate `keyboardHeight`.
+- Combined with CSS viewport locking, it prevents visual content shift while allowing the
+  CTA to position correctly.
+- It is the most widely tested mode in the Capacitor/Ionic ecosystem on Android.
+
+**Why `resize: 'none'` is kept in the Capacitor config:**
+
+The `resize` config controls the plugin's **JS-side behavior** (whether it programmatically
+resizes `document.body` or adjusts Ionic's layout). Setting it to `'none'` prevents the
+plugin from making any JS-side layout changes. The Android-native `adjustResize` is set
+separately in the native project, giving us OS-level viewport resize (reliable keyboard
+detection) without plugin-driven body/ionic resizing.
+
+### 12.4 Fix: Android Native Soft Input Override
+
+The Capacitor Keyboard plugin programmatically sets `windowSoftInputMode` to
+`adjustNothing` based on `resize: 'none'`. Override this at the native Android level by
+setting `adjustResize` in the main activity **after** the Capacitor bridge initializes.
+
+```java
+// android/app/src/main/java/.../MainActivity.java
+
+import android.os.Bundle;
+import android.view.WindowManager;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Override Capacitor Keyboard plugin's adjustNothing.
+        // adjustResize is required for reliable keyboard height detection on Android.
+        // The plugin's resize: 'none' config still prevents JS-side body/ionic resizing.
+        getWindow().setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        );
+    }
+}
+```
+
+After this change, rebuild the Android project. The plugin's event detection (based on
+`getWindowVisibleDisplayFrame()`) works because the viewport frame now changes with
+`adjustResize`.
+
+### 12.5 Fix: CSS Viewport Lock
+
+With `adjustResize` active, the Android WebView viewport shrinks when the keyboard opens.
+Without intervention, `ion-content` and any element using `height: 100%` or `100vh` would
+shrink with it, causing the visible content shift.
+
+**Solution:** The `KeyboardLayoutService` captures the initial viewport height before the
+keyboard opens and sets it as a CSS custom property `--keyboard-safe-height`. Consuming
+pages lock their host element to this height.
+
+**Service side** (already included in the updated service in Section 8):
+
+```typescript
+// In attach(), before registering listeners:
+if (this.isAndroid) {
+  document.documentElement.style.setProperty(
+    '--keyboard-safe-height',
+    `${window.innerHeight}px`,
+  );
+}
+```
+
+**Page SCSS side** (add to every consuming page's `:host`):
+
+```scss
+:host {
+  // On Android, locks the page to its pre-keyboard height so content does not shift.
+  // On iOS, the CSS variable is unset and the fallback (100%) applies normally.
+  height: var(--keyboard-safe-height, 100%);
+  overflow: hidden;
+}
+```
+
+**Why this works:**
+
+- `position: fixed` elements are positioned relative to the **viewport**, not the host
+  element. When `adjustResize` shrinks the viewport, `fixed; bottom: 0` sits above the
+  keyboard automatically.
+- The host element stays at its original height (locked by the CSS variable), so its content
+  does not reflow or shift.
+- Content that extends below the visible viewport (behind the keyboard) is clipped by
+  `overflow: hidden`. This is acceptable because the input field is near the top of the page.
+
+### 12.6 Fix: Disable Ionic scrollAssist
+
+Ionic has a built-in `scrollAssist` feature that auto-scrolls content when the keyboard
+opens to keep the focused input visible. On money-movement screens where the input is near
+the top of the page, this auto-scroll causes unnecessary content displacement on Android.
+
+Disable it in the Ionic provider configuration:
+
+```typescript
+// app.config.ts (or wherever provideIonicAngular is called)
+provideIonicAngular({
+  scrollAssist: false,
+  // ... other Ionic config
+}),
+```
+
+**Trade-off:** If other screens in the app rely on `scrollAssist` (e.g., long forms where
+the input is below the fold), disable it selectively. On `ion-content`, set the attribute
+`[scrollAssist]="false"` per-page instead of globally.
+
+For trade ticket and money-movement modals, `scrollAssist` is not needed because the decimal
+input field is always visible without scrolling.
+
+### 12.7 CSS Anti-Patterns to Audit
+
+Audit the trade ticket page, modal containers, and any wrapper components for these CSS
+patterns that amplify the Android keyboard layout shift:
+
+| Anti-pattern | Why it causes problems | Fix |
+|---|---|---|
+| `height: 100vh` on modal/page root | On Android, `100vh` can change when the viewport resizes. The container resizes with the keyboard. | Use `var(--keyboard-safe-height, 100%)`. |
+| `min-height: 100vh` on modal wrappers | Same issue. Flex containers redistribute space when min-height changes. | Use `var(--keyboard-safe-height, 100%)`. |
+| `height: 100%` chains from `html` to `ion-app` to modal | If any ancestor resizes, all descendants resize. | Break the chain at the page level with the CSS variable lock. |
+| Flex containers with `justify-content: center` on the page root | When the container shrinks, centered content shifts upward visually. | Use `justify-content: flex-start` on page roots. |
+| `overflow: auto` or `overflow: scroll` on the modal wrapper | Creates a secondary scroll container that Android WebView may scroll unexpectedly on keyboard open. | Use `overflow: hidden` on the page wrapper. Only `ion-content` should scroll. |
+| `transform` or `will-change: transform` on modal ancestors | Creates a new containing block for `position: fixed` children, breaking fixed-viewport positioning. | Remove transforms from modal ancestor chain or move the CTA outside the transformed container. |
+
+### 12.8 Android Verification
+
+After applying all fixes (12.4 native override, 12.5 CSS viewport lock, 12.6 scrollAssist,
+updated service from Section 8, updated SCSS from Sections 10.4 / 11.3), verify on a
+physical Android device (Google Pixel preferred):
+
+1. Run `npx cap sync` after all config changes.
+2. Rebuild the Android project via Android Studio (or `npx cap run android`).
+3. Open the trade ticket. Tap the amount input.
+4. **Content stability:** Page content does NOT shift upward. Only the CTA bar repositions.
+5. **CTA position:** CTA bar sits directly above the keyboard with no gap and no overlap.
+6. **Keyboard height:** Add a temporary `console.log` in the `keyboardWillShow` listener to
+   confirm `keyboardHeight` is a positive number (not `0`).
+7. **Dismiss:** Tap outside the input to dismiss keyboard. CTA returns to resting position.
+8. **Rapid cycles:** Tap in/out of the input 5+ times rapidly. No layout corruption.
+9. **Rotation:** Rotate the device with keyboard open, close keyboard, verify layout recovery.
+10. **Navigation:** Leave the page and return. No stale keyboard offset or viewport lock.
+11. **Compare iOS:** Run the same flow on iOS. Both platforms produce a stable, consistent
+    experience (CTA above keyboard, content stable).
+
+---
+
+## 13. iOS Accessory Bar Removal
 
 The iOS keyboard accessory bar is the translucent strip above the keyboard containing
 "Done", tab navigation arrows, and (on newer iOS versions) the autocomplete/password bar.
@@ -587,7 +852,7 @@ is needed.
 
 ---
 
-## 13. Keyboard Auto-Focus Behavior
+## 14. Keyboard Auto-Focus Behavior
 
 **Rule:** Do not programmatically call `Keyboard.show()`. It is Android-only and
 unsupported on iOS.
@@ -606,7 +871,7 @@ unsupported on iOS.
 
 ---
 
-## 14. Input Handling
+## 15. Input Handling
 
 The decimal input mode on existing pages is already implemented and functioning. The native
 keyboard shows a decimal number pad.
@@ -621,7 +886,7 @@ keyboard shows a decimal number pad.
 
 ---
 
-## 15. QA Acceptance Criteria
+## 16. QA Acceptance Criteria
 
 Every item must pass on every page that integrates `KeyboardLayoutService` before the
 implementation is considered complete.
@@ -639,10 +904,16 @@ implementation is considered complete.
 
 ### Android
 
-- [ ] CTA bar appears above the keyboard when it opens.
-- [ ] No fullscreen or status-bar overlay resize issue.
-- [ ] Keyboard close/open restores layout cleanly.
+- [ ] `keyboardHeight` is reported as a positive number (not `0`) in `keyboardWillShow`.
+- [ ] Page content does NOT shift upward when the keyboard opens (viewport lock working).
+- [ ] CTA bar sits directly above the keyboard with no gap.
+- [ ] Keyboard close/open restores layout cleanly, no residual offset.
 - [ ] No overlap between CTA and bottom navigation bar or system gesture area.
+- [ ] `--keyboard-safe-height` CSS variable is set on `<html>` when keyboard attaches.
+- [ ] `--keyboard-safe-height` is removed when page detaches (no stale locks).
+- [ ] Ionic `scrollAssist` is disabled (content does not auto-scroll on input focus).
+- [ ] Fullscreen modal does not exhibit different behavior from a routed page.
+- [ ] Google Pixel (primary Android test device) shows stable behavior.
 
 ### Functional (both platforms)
 
@@ -660,7 +931,7 @@ implementation is considered complete.
 
 ---
 
-## 16. Common Mistakes
+## 17. Common Mistakes
 
 These are errors to avoid. If an AI agent generates code that matches any of these patterns,
 it must be corrected.
@@ -678,3 +949,8 @@ it must be corrected.
 | Keeping safe-area padding when keyboard is open | Creates a visible gap between the CTA bottom edge and the keyboard top edge. | The mixin handles this via `.keyboard-open` class. Ensure the page binds `[class.keyboard-open]`. |
 | Creating the service per-page with `providedIn: 'any'` or per-component providers | Multiple instances fight over the same global Capacitor plugin resource. | Use `providedIn: 'root'` (singleton). Only one Ionic page is active at a time. |
 | Modifying existing page structure or form logic during integration | Scope creep. The keyboard integration touches only lifecycle hooks, CTA bindings, and SCSS. | Add only the `KeyboardLayoutService` injection, the two template bindings, and the SCSS mixin. Leave everything else untouched. |
+| Using `resize: 'native'` or `resize: 'body'` in Capacitor config for Android | The plugin's JS-side resize logic fights with the native `adjustResize` override and causes unpredictable body/ionic adjustments. | Keep `resize: 'none'` in Capacitor config. Override `adjustResize` only at the native Android level in `MainActivity`. |
+| Removing the `adjustResize` override in Android `MainActivity` | Reverts to `adjustNothing`, breaking keyboard height detection. `keyboardHeight` returns `0`. | The `adjustResize` override in `onCreate()` is required for Android. Do not remove it. |
+| Applying `ctaBottomOffset` manually on Android | With `adjustResize`, the viewport already shrinks. Adding offset double-moves the CTA. | The service returns `'0px'` on Android automatically. Do not override per-page. |
+| Using `100vh` or `100%` instead of `var(--keyboard-safe-height, 100%)` on page hosts | On Android, viewport height changes with `adjustResize`, causing the page to shrink and content to shift. | Use `var(--keyboard-safe-height, 100%)` on pages using `KeyboardLayoutService`. |
+| Forgetting to disable Ionic `scrollAssist` | Ionic auto-scrolls content on input focus, fighting the viewport lock and causing content shift on Android. | Set `scrollAssist: false` globally or per-page for money-movement screens. |
