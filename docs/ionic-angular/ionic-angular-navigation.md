@@ -13,7 +13,7 @@
 3. [Application Shell](#3-application-shell)
 4. [Tab Routing](#4-tab-routing)
 5. [Asset Detail Page (PDP) -- Reusing Views Across Tabs](#5-asset-detail-page-pdp----reusing-views-across-tabs)
-6. [Global Search -- Routed Page Pattern](#6-global-search----routed-page-pattern)
+6. [Global Search -- Dual-Mode Architecture (Page & Modal)](#6-global-search----dual-mode-architecture-page--modal)
 7. [Multi-Step Wizard -- Account Opening Flow](#7-multi-step-wizard----account-opening-flow)
 8. [Route vs Modal -- Decision Framework](#8-route-vs-modal----decision-framework)
 9. [Animations and Gestures](#9-animations-and-gestures)
@@ -155,7 +155,7 @@ export const routes: Routes = [
       {
         path: 'portfolio/search',
         loadComponent: () =>
-          import('./shared/search.component').then(m => m.SearchComponent),
+          import('./search/search-page.component').then(m => m.SearchPageComponent),
       },
       {
         path: 'portfolio/asset/:ticker',
@@ -172,7 +172,7 @@ export const routes: Routes = [
       {
         path: 'discover/search',
         loadComponent: () =>
-          import('./shared/search.component').then(m => m.SearchComponent),
+          import('./search/search-page.component').then(m => m.SearchPageComponent),
       },
       {
         path: 'discover/asset/:ticker',
@@ -188,7 +188,7 @@ export const routes: Routes = [
       {
         path: 'news/search',
         loadComponent: () =>
-          import('./shared/search.component').then(m => m.SearchComponent),
+          import('./search/search-page.component').then(m => m.SearchPageComponent),
       },
       {
         path: 'news/asset/:ticker',
@@ -388,34 +388,77 @@ Tab bar stays on the correct tab.
 
 ---
 
-## 6. Global Search -- Routed Page Pattern
+## 6. Global Search -- Dual-Mode Architecture (Page & Modal)
 
-Search is a **navigation step** between a tab root and the Asset Detail Page (PDP). The user
-flows through: `tab root → search → PDP`. Pressing back from PDP returns to the search
-results, and pressing back from search returns to the tab root. This follows the standard iOS
-navigation stack pattern where each screen is a forward push.
+Search is the primary instrument discovery mechanism in the app. It connects users to the
+Asset Detail Page (PDP) from any context. This section defines two presentation modes
+(routed page and modal), a shared component architecture, and the navigation patterns that
+connect search results to PDP.
 
-### 6.1 Why a Route, Not a Modal
+### 6.1 Two Modes, One Feature
 
-Product decision: the user must be able to press back from PDP to return to search results
-and quickly select a different asset. This requires search to persist on the navigation stack.
+The app supports search in two distinct navigation modes, each optimized for a different
+user intent:
 
-| Consideration | Route approach (correct) | Modal approach (wrong for this case) |
+| Mode | UX Pattern | When to Use |
 |---|---|---|
-| Back from PDP | Returns to search page with results preserved. User taps another result. | Returns to the page that launched search. User must reopen search and re-query. |
-| Navigation stack | `portfolio → search → AAPL detail` — standard iOS push stack. Swipe-back works at every level. | Search is not on the stack. No way to "go back" to it from PDP. |
-| Reuse across tabs | Same `SearchComponent`, one route per tab prefix. Same pattern as PDP (Section 5). | Works, but violates the product requirement for back navigation to search. |
-| Will search be a tab? | No — it is a child page within each tab, not a tab itself. | N/A |
+| **Search Page** (routed) | Full page pushed onto tab stack. Chevron back button (left). Results persist on stack behind PDP. | Primary search experience. User browses multiple results: `tab → search → PDP → back → search → PDP`. |
+| **Search Modal** (overlay) | Full-screen modal slides up over tab. X close button (right). Dismisses on selection or cancel. | Quick one-shot lookup. User picks one result and goes to PDP: `tab → [modal] → PDP`. Back from PDP returns to the tab, not search. |
 
-### 6.2 Route Configuration
+**Key behavioral difference — back-from-PDP:**
 
-Search routes follow the same per-tab duplication pattern as PDP. Each tab that can launch
-search gets a `<tab>/search` sibling route pointing to the shared `SearchComponent`:
+- **Page mode:** Back from PDP reveals the search page underneath (preserved by
+  `ion-router-outlet`). User taps another result without re-querying. This is the
+  multi-result browsing flow.
+- **Modal mode:** The modal is already dismissed when PDP opens. Back from PDP returns to
+  the originating tab page. To search again, the user reopens the modal. This is the
+  quick-pick flow.
+
+### 6.2 Architecture Decision: Two Wrappers + Shared Core
+
+Both modes share search logic (API calls, query state, result models) and result list UI.
+Only the **shell** differs — toolbar buttons, dismiss behavior, and how a selected result
+triggers navigation.
+
+**Recommended architecture: two thin wrapper components composing a shared result list
+component, backed by a shared data-access layer.**
 
 ```
-tabs/portfolio/search          --> SearchComponent
-tabs/discover/search           --> SearchComponent
-tabs/news/search               --> SearchComponent
+feature/search/
+├── search-page.component.ts          # Routed page — ion-back-button, navigateForward to PDP
+├── search-modal.component.ts         # Modal — X close, dismiss with selected ticker
+├── search-modal.service.ts           # Presents modal, returns selection to caller
+├── ui/
+│   └── search-result-list.component.ts   # Shared search input + result list
+├── data-access/
+│   └── search-api.service.ts         # Root-scoped API service (shared singleton)
+└── models/
+    └── search.models.ts              # SearchResult interface
+```
+
+**Why two wrapper components, not one component with a mode input?**
+
+| Concern | Two wrappers (recommended) | Single component with `mode` input |
+|---|---|---|
+| Single responsibility | Each wrapper has one job: page navigation or modal dismiss. | Component handles both page and modal paths — mixed concerns. |
+| Testability | Test page and modal behaviors independently with simple fixtures. | Every test must configure the mode and cover both branches. |
+| Template clarity | Each template is short and obvious — no `@if (mode())` conditionals in the header. | Template branches on mode for toolbar buttons, making it harder to scan. |
+| Dependency injection | Page injects `NavController` + `ActivatedRoute`. Modal injects `ModalController`. Neither carries dead dependencies.  | Must inject both `NavController` and `ModalController` even when only one is used. |
+| Extensibility | Add modal-specific features (recent searches popover, inline results preview) without touching the page. | Every enhancement risks impacting the other mode. |
+
+The shared `SearchResultListComponent` is the only piece that renders search results. Both
+wrappers compose it and react to its `resultSelected` output. The wrappers are ~40 lines
+each — the cost of two files is trivial compared to the clarity gained.
+
+### 6.3 Route Configuration (Search Page)
+
+Search page routes follow the same per-tab duplication pattern as PDP (Section 5). Each tab
+that can launch search gets a `<tab>/search` sibling route pointing to `SearchPageComponent`:
+
+```
+tabs/portfolio/search          --> SearchPageComponent
+tabs/discover/search           --> SearchPageComponent
+tabs/news/search               --> SearchPageComponent
 ```
 
 These are already included in the route config in Section 4.1. The navigation stacks:
@@ -429,23 +472,149 @@ news       → news/search       → news/asset/TSLA
 Back pops each level: `AAPL detail → search → portfolio`. Tab bar stays on the correct tab
 throughout. Swipe-back gesture works at every transition.
 
-### 6.3 SearchComponent
+**The search modal has no routes.** It is presented via `ModalController` and does not
+participate in the tab's navigation stack.
+
+### 6.4 Shared Models and Data-Access
+
+#### SearchResult Interface
 
 ```typescript
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+// feature/search/models/search.models.ts
+export interface SearchResult {
+  readonly ticker: string;
+  readonly name: string;
+  readonly type: 'stock' | 'crypto' | 'etf';
+}
+```
+
+#### SearchApiService (Root-Scoped Singleton)
+
+A root-scoped service provides the search API call. Both the page and modal inject this
+service — there is no duplicated HTTP logic.
+
+```typescript
+// feature/search/data-access/search-api.service.ts
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { SearchResult } from '../models/search.models';
+
+@Injectable({ providedIn: 'root' })
+export class SearchApiService {
+  private readonly http = inject(HttpClient);
+
+  search(query: string): Observable<readonly SearchResult[]> {
+    return this.http.get<readonly SearchResult[]>('/api/instruments/search', {
+      params: { q: query },
+    });
+  }
+}
+```
+
+### 6.5 SearchResultListComponent (Shared UI)
+
+This is the reusable core of both search modes. It owns the search input and the results
+list. It knows nothing about navigation, modals, or routing — it emits an event when the
+user selects a result, and the parent decides what to do.
+
+```typescript
+// feature/search/ui/search-result-list.component.ts
+import { Component, ChangeDetectionStrategy, signal, inject, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
-  NavController, IonHeader, IonToolbar, IonButtons, IonBackButton,
-  IonSearchbar, IonContent, IonList, IonItem, IonLabel,
+  IonSearchbar, IonList, IonItem, IonLabel, IonSpinner, IonText,
 } from '@ionic/angular/standalone';
+import { Subject, switchMap, debounceTime, filter, catchError, of } from 'rxjs';
+import { SearchApiService } from '../data-access/search-api.service';
+import { SearchResult } from '../models/search.models';
 
 @Component({
-  selector: 'app-search',
+  selector: 'app-search-result-list',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IonSearchbar, IonList, IonItem, IonLabel, IonSpinner, IonText],
+  template: `
+    <ion-searchbar
+      placeholder="Search stocks, crypto, ETFs..."
+      (ionInput)="onQueryChange($event)"
+      [debounce]="300"
+    />
+    @if (loading()) {
+      <div class="ion-text-center ion-padding">
+        <ion-spinner name="crescent" />
+      </div>
+    }
+    <ion-list>
+      @for (result of results(); track result.ticker) {
+        <ion-item button (click)="resultSelected.emit(result)">
+          <ion-label>
+            <h2>{{ result.ticker }}</h2>
+            <p>{{ result.name }}</p>
+          </ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  `,
+})
+export class SearchResultListComponent {
+  private readonly searchApi = inject(SearchApiService);
+  private readonly query$ = new Subject<string>();
+
+  /** Emitted when the user taps a result. Parent handles navigation/dismiss. */
+  readonly resultSelected = output<SearchResult>();
+
+  protected readonly loading = signal(false);
+
+  protected readonly results = toSignal(
+    this.query$.pipe(
+      debounceTime(300),
+      filter(q => q.length >= 1),
+      switchMap(q => {
+        this.loading.set(true);
+        return this.searchApi.search(q).pipe(
+          catchError(() => of([] as readonly SearchResult[])),
+        );
+      }),
+    ),
+    { initialValue: [] as readonly SearchResult[] },
+  );
+
+  protected onQueryChange(event: CustomEvent): void {
+    const value = (event.detail.value ?? '').trim();
+    this.loading.set(value.length >= 1);
+    this.query$.next(value);
+  }
+}
+```
+
+**Key point:** `resultSelected` emits the full `SearchResult` — the parent extracts the
+`ticker` and decides whether to navigate forward (page) or dismiss with data (modal).
+
+### 6.6 SearchPageComponent (Routed Page)
+
+The page wrapper provides:
+- `ion-back-button` (chevron) in the **start** slot of the toolbar.
+- Forward navigation to PDP when a result is selected.
+- Stays on the navigation stack behind PDP.
+
+```typescript
+// feature/search/search-page.component.ts
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import {
+  NavController, IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent,
+} from '@ionic/angular/standalone';
+import { SearchResultListComponent } from './ui/search-result-list.component';
+import { SearchResult } from './models/search.models';
+
+@Component({
+  selector: 'app-search-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    IonHeader, IonToolbar, IonButtons, IonBackButton,
-    IonSearchbar, IonContent, IonList, IonItem, IonLabel,
+    IonHeader, IonToolbar, IonButtons, IonBackButton, IonContent,
+    SearchResultListComponent,
   ],
   template: `
     <ion-header>
@@ -453,70 +622,198 @@ import {
         <ion-buttons slot="start">
           <ion-back-button [defaultHref]="tabRoot" />
         </ion-buttons>
-        <ion-searchbar
-          placeholder="Search stocks, crypto, ETFs..."
-          (ionInput)="onSearch($event)"
-          [debounce]="300"
-        />
       </ion-toolbar>
     </ion-header>
     <ion-content>
-      <ion-list>
-        @for (result of results(); track result.ticker) {
-          <ion-item button (click)="navigateToAsset(result.ticker)">
-            <ion-label>
-              <h2>{{ result.ticker }}</h2>
-              <p>{{ result.name }}</p>
-            </ion-label>
-          </ion-item>
-        }
-      </ion-list>
+      <app-search-result-list (resultSelected)="onResultSelected($event)" />
     </ion-content>
   `,
 })
-export class SearchComponent {
+export class SearchPageComponent {
   private readonly navCtrl = inject(NavController);
   private readonly route = inject(ActivatedRoute);
 
-  /** Resolved from the current URL: '/tabs/portfolio', '/tabs/discover', etc. */
+  /** Resolved from URL: '/tabs/portfolio', '/tabs/discover', etc. */
   protected readonly tabRoot: string;
 
-  protected readonly results = signal<{ ticker: string; name: string }[]>([]);
-
   constructor() {
-    // Derive the tab prefix from the current route: /tabs/<tab>/search → /tabs/<tab>
     const url = this.route.snapshot.pathFromRoot
       .map(s => s.url.map(u => u.path).join('/'))
       .filter(Boolean)
       .join('/');
     const segments = url.split('/');
-    // segments: ['tabs', '<tab>', 'search'] → take first two
     this.tabRoot = '/' + segments.slice(0, 2).join('/');
   }
 
-  protected onSearch(event: CustomEvent): void {
-    const query = (event.detail.value ?? '').trim();
-    // Call search API, update results signal
-  }
-
-  protected navigateToAsset(ticker: string): void {
+  protected onResultSelected(result: SearchResult): void {
     // Push PDP onto the stack ABOVE search (within the same tab)
-    this.navCtrl.navigateForward([this.tabRoot, 'asset', ticker]);
+    this.navCtrl.navigateForward([this.tabRoot, 'asset', result.ticker]);
   }
 }
 ```
 
-**Key details:**
+**Navigation flow (page):**
 
-- `ion-back-button` with `defaultHref` pointing to the tab root — back returns to Portfolio,
-  Discover, or News depending on which tab launched search.
-- `tabRoot` is derived from the current URL so the component is tab-agnostic.
-- Tapping a result navigates **forward** to the PDP within the same tab. Search stays on
-  the stack behind PDP.
-- Because `ion-router-outlet` preserves pages, when the user presses back from PDP, the
-  search page is revealed with its results and scroll position intact.
+```
+[Portfolio]  →forward→  [Search Page]  →forward→  [AAPL PDP]
+                 ↑          (on stack)       ↑          ↑
+                 |                           |          |
+           back-button                 back-button  swipe-back
+           (→ Portfolio)               (→ Search)   (→ Search)
+```
 
-### 6.4 Navigating to Search from Tab Pages
+- Search page persists on the stack. Back from PDP reveals search with results intact.
+- User can tap another result → forward to a new PDP. Repeat without re-querying.
+- Swipe-back works at every level because each transition is a forward push.
+
+### 6.7 SearchModalComponent (Modal)
+
+The modal wrapper provides:
+- X close button in the **end** slot of the toolbar.
+- Dismisses with the selected `SearchResult` when the user taps a result.
+- Dismisses with `null` on cancel (X button).
+- The **caller** (not the modal) navigates to PDP after receiving the selected ticker.
+
+```typescript
+// feature/search/search-modal.component.ts
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import {
+  ModalController, IonHeader, IonToolbar, IonTitle,
+  IonButtons, IonButton, IonContent,
+} from '@ionic/angular/standalone';
+import { SearchResultListComponent } from './ui/search-result-list.component';
+import { SearchResult } from './models/search.models';
+
+@Component({
+  selector: 'app-search-modal',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent,
+    SearchResultListComponent,
+  ],
+  template: `
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Search</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="close()">
+            <ion-icon name="close" slot="icon-only" />
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <app-search-result-list (resultSelected)="onResultSelected($event)" />
+    </ion-content>
+  `,
+})
+export class SearchModalComponent {
+  private readonly modalCtrl = inject(ModalController);
+
+  protected onResultSelected(result: SearchResult): void {
+    this.modalCtrl.dismiss(result, 'select');
+  }
+
+  protected close(): void {
+    this.modalCtrl.dismiss(null, 'cancel');
+  }
+}
+```
+
+**Why the modal does not navigate to PDP itself:**
+
+The modal is a **picker** — it presents options and returns the user's choice. Navigation
+is the caller's responsibility. This keeps the modal reusable and avoids coupling it to
+tab-specific route prefixes. The caller knows which tab it belongs to and can construct the
+correct PDP route.
+
+### 6.8 SearchModalService (Launch from Anywhere)
+
+A root-scoped service encapsulates modal creation and provides a clean async API. Any tab
+or feature component calls `open()` and receives the selected ticker (or `null` on cancel).
+
+```typescript
+// feature/search/search-modal.service.ts
+import { Injectable, inject } from '@angular/core';
+import { ModalController } from '@ionic/angular/standalone';
+import { SearchModalComponent } from './search-modal.component';
+import { SearchResult } from './models/search.models';
+
+@Injectable({ providedIn: 'root' })
+export class SearchModalService {
+  private readonly modalCtrl = inject(ModalController);
+
+  /**
+   * Present the search modal. Returns the selected result, or null if cancelled.
+   * The caller is responsible for navigating to PDP with the returned ticker.
+   */
+  async open(): Promise<SearchResult | null> {
+    const modal = await this.modalCtrl.create({
+      component: SearchModalComponent,
+    });
+    await modal.present();
+    const { data, role } = await modal.onDidDismiss<SearchResult | null>();
+    return role === 'select' ? data ?? null : null;
+  }
+}
+```
+
+### 6.9 Search → PDP Navigation Patterns
+
+This is the critical section. Both modes send the user to PDP, but the navigation stack
+and back behavior differ fundamentally.
+
+#### 6.9.1 Page Mode → PDP
+
+```typescript
+// Inside SearchPageComponent (handled by onResultSelected)
+this.navCtrl.navigateForward([this.tabRoot, 'asset', result.ticker]);
+```
+
+**Stack:** `Portfolio → Search Page → AAPL PDP`
+**Back from PDP:** Reveals Search Page (results preserved, scroll position intact).
+**Back from Search:** Returns to Portfolio.
+
+This is the correct pattern when the user is **browsing** — comparing multiple instruments,
+tapping several results, and using back to return to the result list.
+
+#### 6.9.2 Modal Mode → PDP
+
+The **caller** navigates to PDP after the modal dismisses and returns the selected ticker.
+
+```typescript
+// In PortfolioComponent (or any tab page)
+private readonly searchModal = inject(SearchModalService);
+private readonly navCtrl = inject(NavController);
+
+protected async openSearchModal(): Promise<void> {
+  const result = await this.searchModal.open();
+  if (result) {
+    this.navCtrl.navigateForward(['/tabs/portfolio/asset', result.ticker]);
+  }
+}
+```
+
+**Stack:** `Portfolio → [Modal opens, user picks AAPL, modal dismisses] → AAPL PDP`
+**Back from PDP:** Returns to Portfolio (search modal is gone).
+
+This is the correct pattern when search is a **quick lookup** — the user has a specific
+instrument in mind, finds it, and goes directly to its PDP.
+
+#### 6.9.3 Side-by-Side Comparison
+
+| Aspect | Page Mode | Modal Mode |
+|---|---|---|
+| Toolbar button | Chevron back (start slot) | X close (end slot) |
+| Search on nav stack? | Yes — persists behind PDP | No — dismissed before PDP opens |
+| Back from PDP | → Search (results preserved) | → Originating tab page |
+| Multi-result browsing | Natural (back → search → tap → PDP → repeat) | Requires reopening modal each time |
+| Tab bar visible? | Yes (search is a tab child) | No (modal covers tab chrome) |
+| Swipe-back from PDP | → Search page | → Tab page |
+| Requires route? | Yes — one per tab prefix | No — launched via `ModalController` |
+
+### 6.10 Navigating to Search Page from Tab Pages
 
 ```typescript
 // In PortfolioComponent
@@ -529,9 +826,9 @@ this.navCtrl.navigateForward(['/tabs/discover/search']);
 this.navCtrl.navigateForward(['/tabs/news/search']);
 ```
 
-### 6.5 Navigating to Search from PDP
+### 6.11 Navigating to Search Page from PDP
 
-Search can also be launched from within a PDP page. This pushes search onto the stack above
+Search page can also be launched from within a PDP. This pushes search onto the stack above
 PDP, creating a deeper stack:
 
 ```
@@ -542,20 +839,80 @@ Back from TSLA detail returns to search. Back from search returns to AAPL detail
 standard iOS push behavior and works correctly with `ion-router-outlet`.
 
 ```typescript
-// In AssetDetailComponent — navigate to search within the current tab
+// In AssetDetailComponent — push search page within the current tab
 this.navCtrl.navigateForward([this.tabRoot, 'search']);
 ```
 
-### 6.6 Do's and Don'ts
+### 6.12 Launching Search Modal from Any Surface
 
-> **DO:** Use the same per-tab route duplication pattern as PDP — one `<tab>/search` route per tab.
-> **DO:** Navigate forward to PDP from search (keeps search on the stack for back navigation).
-> **DO:** Derive the tab prefix dynamically so `SearchComponent` is tab-agnostic.
-> **DO:** Set `defaultHref` on `ion-back-button` to the tab root.
+Modal search can be launched from tab pages, PDP, settings — any component in the app.
+The modal overlays whatever is currently visible; dismissing returns the user to their
+exact prior state.
+
+```typescript
+// From PortfolioComponent
+protected async quickSearch(): Promise<void> {
+  const result = await this.searchModal.open();
+  if (result) {
+    this.navCtrl.navigateForward(['/tabs/portfolio/asset', result.ticker]);
+  }
+}
+
+// From AssetDetailComponent (e.g. a "Search" icon in the toolbar)
+protected async quickSearch(): Promise<void> {
+  const result = await this.searchModal.open();
+  if (result) {
+    this.navCtrl.navigateForward([this.tabRoot, 'asset', result.ticker]);
+  }
+}
+
+// From ProfileComponent (e.g. "Look up an instrument" link)
+protected async quickSearch(): Promise<void> {
+  const result = await this.searchModal.open();
+  if (result) {
+    this.navCtrl.navigateForward(['/tabs/profile/asset', result.ticker]);
+  }
+}
+```
+
+### 6.13 When to Use Each Mode — Decision Guide
+
+| Scenario | Use | Why |
+|---|---|---|
+| Tab root search icon (primary search entry) | **Page** | User is starting a search session — likely to browse multiple results. Back-to-search from PDP is essential. |
+| "Find another instrument" from PDP | **Page** | User wants to compare. Search page pushes above PDP; back returns to PDP. |
+| Quick ticker lookup from a widget, button, or CTA | **Modal** | User has a specific instrument in mind. One-shot selection, no browsing needed. |
+| Search from a context where adding a stack page is disruptive | **Modal** | E.g. inside a wizard step, a modal overlay, or a sheet — avoid polluting the navigation stack. |
+| Feature where product requires back-to-search from PDP | **Page** | Only pages persist on the navigation stack. Modal cannot provide this. |
+
+**Default recommendation:** Use the **search page** as the primary search experience tied
+to the search icon in tab headers. Use the **search modal** for secondary entry points
+(CTAs, in-context lookups) where minimal navigation disruption is desired.
+
+### 6.14 Do's and Don'ts
+
+> **DO:** Use two wrapper components (`SearchPageComponent`, `SearchModalComponent`) composing
+> a shared `SearchResultListComponent`. Keep wrappers thin — shell + navigation intent only.
+> **DO:** Use the same per-tab route duplication pattern as PDP — one `<tab>/search` route
+> per tab, all pointing to `SearchPageComponent`.
+> **DO:** Put chevron `ion-back-button` in the **start** slot for search page, and X close
+> `ion-button` in the **end** slot for search modal.
+> **DO:** Have the search modal dismiss with data — let the **caller** navigate to PDP.
+> **DO:** Use `SearchModalService` to encapsulate modal creation — callers get a clean
+> `Promise<SearchResult | null>` API.
+> **DO:** Navigate forward to PDP from search page (keeps search on the stack for back).
+> **DO:** Use `SearchApiService` as a root-scoped singleton shared by both modes.
 >
-> **DON'T:** Create a single shared `tabs/search` route — it breaks tab highlighting (same reason as PDP).
-> **DON'T:** Use `navigateRoot` from search to PDP — it replaces the stack and destroys the search page.
-> **DON'T:** Implement search as a modal if product requires back-to-search from PDP.
+> **DON'T:** Create a single component with `@if (mode() === 'page')` / `@if (mode() === 'modal')`
+> branching — it mixes concerns and complicates testing.
+> **DON'T:** Navigate to PDP from inside the search modal — the modal doesn't know the
+> caller's tab prefix. Return the selection and let the caller navigate.
+> **DON'T:** Create a single shared `tabs/search` route — it breaks tab highlighting (same
+> reason as PDP in Section 5.1).
+> **DON'T:** Use `navigateRoot` from search page to PDP — it replaces the stack and destroys
+> the search page.
+> **DON'T:** Use the search modal when product requires back-to-search browsing from PDP —
+> only the page mode supports that flow.
 
 ---
 
@@ -1096,7 +1453,8 @@ template: `<ion-nav [root]="wizardStep1" />`
 |---|---|---|
 | Drill-down within a tab (Portfolio -> AAPL detail) | **Route** (sibling child) | Preserves tab stack; back button works natively; URL is meaningful for deep linking. |
 | Same view from multiple tabs (PDP from Portfolio, Discover, News) | **Route per tab** (shared component) | Each tab gets correct back navigation and tab highlighting. This is the Robinhood/Spotify pattern. |
-| Search as a navigation step (tab root → Search → PDP) | **Route per tab** (shared component) | User needs back-to-search from PDP to pick different results. Same reuse pattern as PDP. |
+| Search as browsable navigation step (tab root → Search → PDP) | **Route per tab** (`SearchPageComponent`) | User needs back-to-search from PDP to pick different results. Same reuse pattern as PDP. Chevron back button. |
+| Search as quick instrument picker | **Modal** (`SearchModalComponent` via `SearchModalService`) | One-shot lookup. Modal dismisses with selected ticker; caller navigates to PDP. X close button. Back from PDP returns to originating page, not search. |
 | Multi-step wizard (Account Opening) | **Routed** (outside tabs) or **Modal** | Product decision: routed if resume, deep link, or audit trail needed (see Section 7.1 Q&A); modal if short, low-stakes, no re-entry. |
 | Settings sub-pages (Profile -> Settings -> Notifications) | **Route** (sibling under profile/) | Linear drill-down within a single tab. Standard shared-URL pattern. |
 | Quick action (confirm trade, set alert) | **Inline modal** with `isOpen` signal | Short-lived interaction; no routing needed; signal controls open/close. |
@@ -1388,6 +1746,9 @@ inner page and there is no stack history to pop.
 | 11 | Missing `canDismiss` on modals with forms or wizards | Set `canDismiss` to a guard function to prevent accidental swipe/backdrop dismissal during data entry or multi-step flows. |
 | 12 | Custom CSS animations replacing Ionic defaults | Ionic provides native-quality page and modal animations by default. Only customize via `enterAnimation`/`leaveAnimation` when the design explicitly requires non-standard transitions. |
 | 13 | Routed wizard steps duplicated across every tab prefix | Place wizard routes outside `tabs` (one set of routes, tab bar hidden). Per-tab route duplication is for single-page views (PDP, Search), not multi-step flows. |
+| 14 | Single search component with `@if (mode())` branching for page vs modal | Use two thin wrappers (`SearchPageComponent`, `SearchModalComponent`) composing a shared `SearchResultListComponent`. Avoids mixed concerns, dead DI, and mode-conditional templates. |
+| 15 | Search modal navigating to PDP internally | The modal should dismiss with the selected `SearchResult`. The **caller** navigates to PDP — it knows the correct tab prefix. The modal is a picker, not a navigation controller. |
+| 16 | Using search modal when product requires back-to-search from PDP | Only the search page (routed) persists on the nav stack behind PDP. Modal is dismissed before PDP opens, so there is nothing to "go back" to. Use page mode for multi-result browsing. |
 
 ---
 
