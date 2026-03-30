@@ -1,11 +1,18 @@
-# Search Feature -- Architecture & Implementation Guide
+# Search Feature — Architecture & Implementation Guide
 
-> **Purpose:** Authoritative architecture and implementation reference for the instrument search
-> feature in the Plynk Invest mobile app. AI coding agents and developers must follow these
-> patterns exactly. This document covers mental model, state management, data flow, component
-> architecture, performance optimizations, edge cases, and implementation sequence.
+<!-- AGENT: This is Stage 1 — the data-access layer reference.
+     For Stage 2 (UI primitives and feature composition), see docs/guides/search-modular.arch.md -->
+
+> **Purpose:** Authoritative architecture and implementation reference for the search
+> feature. AI coding agents and developers must follow these patterns exactly.
+>
+> **Stage 1 of 2** — This document defines the data-access layer: mental model, data
+> models, store, repository, data flow, search behavior, performance, and edge cases.
+> **Stage 2** is in `docs/guides/search-modular.arch.md` — UI layer: composable
+> primitives, feature wrappers, and consumer composition patterns.
 >
 > **Cross-references:**
+> - Stage 2 (UI modularity): `docs/guides/search-modular.arch.md`
 > - Navigation patterns: `docs/ionic-angular/ionic-angular-navigation.md` Section 6
 > - NgRx Signals conventions: `docs/copilot-samples/instructions/ngrx-signals.instructions.md`
 > - App context: `external-context/plynk-invest.app.md`
@@ -51,8 +58,8 @@ Search operates in two modes with identical search logic but different navigatio
 | **Page** | Routed child of each tab. Chevron back button (start slot). | Search icon in tab header, "Find instrument" link. | Returns to search results (preserved on stack). |
 | **Modal** | Full-screen overlay via `ModalController`. X close button (end slot). | Quick CTAs, in-context lookups, secondary entry points. | Returns to originating page (modal is gone). |
 
-Both modes share the same `SearchResultListComponent`, `InstrumentSearchStore`, and
-`InstrumentSearchRepository`. Only the outer shell differs. See Section 6.
+Both modes share the same `SearchResultListComponent`, `SearchStore`, and
+`SearchRepository`. Only the outer shell differs. See Section 6.
 
 ### 1.3 Speed Is the Feature
 
@@ -71,11 +78,12 @@ The architecture must guarantee:
 Following the domain 4-layer architecture from the Plynk workspace conventions:
 
 ```
-libs/plynk-mobile/instrument-search/
+libs/plynk-mobile/search/
 ├── data-access/
-│   ├── instrument-search.store.ts          # NgRx SignalStore — owns all search domain state
-│   ├── instrument-search.repository.ts     # API client wrapper — all HTTP lives here
-│   └── instrument-search.models.ts         # Domain-specific TypeScript types
+│   ├── search.store.ts              # NgRx SignalStore — owns all search domain state
+│   ├── search-storage.provider.ts   # Root-scoped persistence for recents (internal)
+│   ├── search.repository.ts         # API client wrapper — all HTTP lives here
+│   └── search.models.ts             # Domain-specific TypeScript types
 │
 ├── feature/
 │   ├── search-page.component.ts            # Routed page wrapper (ion-back-button + navigation)
@@ -111,10 +119,10 @@ The `productSearch` endpoint returns matched instruments. Define the API DTO sep
 from the domain model to insulate the store from transport changes:
 
 ```typescript
-// data-access/instrument-search.models.ts
+// data-access/search.models.ts
 
 /** Raw shape from the productSearch API endpoint. */
-export interface InstrumentSearchResultDto {
+export interface SearchResultDto {
   readonly symbol: string;
   readonly name: string;
   readonly type: 'STOCK' | 'CRYPTO' | 'ETF' | 'MUTUAL_FUND';
@@ -123,7 +131,7 @@ export interface InstrumentSearchResultDto {
 }
 
 /** Domain model used by store and UI. Repository maps DTO → this. */
-export interface InstrumentSearchResult {
+export interface SearchResult {
   readonly ticker: string;       // normalized symbol (e.g. "AAPL")
   readonly name: string;         // display name (e.g. "Apple Inc.")
   readonly instrumentType: 'stock' | 'crypto' | 'etf' | 'mutual-fund';
@@ -135,7 +143,7 @@ export interface InstrumentSearchResult {
 export interface RecentSearch {
   readonly ticker: string;
   readonly name: string;
-  readonly instrumentType: InstrumentSearchResult['instrumentType'];
+  readonly instrumentType: SearchResult['instrumentType'];
   readonly logoUrl: string | null;
   readonly searchedAt: number;   // epoch ms — for ordering and TTL eviction
 }
@@ -159,9 +167,9 @@ SearchResultListComponent (UI — emits query string)
         ↓ output event
 SearchPageComponent / SearchModalComponent (feature — calls store method)
         ↓ store.search(query)
-InstrumentSearchStore (data-access — orchestrates via rxMethod)
+SearchStore (data-access — orchestrates via rxMethod)
         ↓ calls repository
-InstrumentSearchRepository (data-access — wraps HTTP client)
+SearchRepository (data-access — wraps HTTP client)
         ↓ HTTP GET
 productSearch API endpoint
 ```
@@ -171,26 +179,26 @@ productSearch API endpoint
 ### 4.2 Repository
 
 ```typescript
-// data-access/instrument-search.repository.ts
+// data-access/search.repository.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { InstrumentSearchResult, InstrumentSearchResultDto } from './instrument-search.models';
+import { SearchResult, SearchResultDto } from './search.models';
 
 @Injectable({ providedIn: 'root' })
-export class InstrumentSearchRepository {
+export class SearchRepository {
   private readonly http = inject(HttpClient);
 
-  search$(query: string): Observable<readonly InstrumentSearchResult[]> {
+  search$(query: string): Observable<readonly SearchResult[]> {
     return this.http
-      .get<readonly InstrumentSearchResultDto[]>('/api/instruments/search', {
+      .get<readonly SearchResultDto[]>('/api/instruments/search', {
         params: { q: query },
       })
       .pipe(map(dtos => dtos.map(mapDtoToResult)));
   }
 }
 
-function mapDtoToResult(dto: InstrumentSearchResultDto): InstrumentSearchResult {
+function mapDtoToResult(dto: SearchResultDto): SearchResult {
   return {
     ticker: dto.symbol,
     name: dto.name,
@@ -201,9 +209,9 @@ function mapDtoToResult(dto: InstrumentSearchResultDto): InstrumentSearchResult 
 }
 
 function mapInstrumentType(
-  apiType: InstrumentSearchResultDto['type'],
-): InstrumentSearchResult['instrumentType'] {
-  const typeMap: Record<InstrumentSearchResultDto['type'], InstrumentSearchResult['instrumentType']> = {
+  apiType: SearchResultDto['type'],
+): SearchResult['instrumentType'] {
+  const typeMap: Record<SearchResultDto['type'], SearchResult['instrumentType']> = {
     STOCK: 'stock',
     CRYPTO: 'crypto',
     ETF: 'etf',
@@ -214,7 +222,7 @@ function mapInstrumentType(
 ```
 
 **Rules:**
-- Repository returns `Observable<readonly InstrumentSearchResult[]>` — the store subscribes
+- Repository returns `Observable<readonly SearchResult[]>` — the store subscribes
   via `rxMethod`, never the UI.
 - Mapping lives in the repository file, not the store.
 - If the API changes field names, only this file changes.
@@ -243,12 +251,12 @@ Our strategy:
 
 ### 5.1 Store Design
 
-The `InstrumentSearchStore` is **feature-scoped** (provided at route/modal level), not global.
+The `SearchStore` is **feature-scoped** (provided at route/modal level), not global.
 Search results are transient — they should not persist when the user leaves search. Recent
 searches are a separate concern managed by a lightweight root-scoped service.
 
 ```typescript
-// data-access/instrument-search.store.ts
+// data-access/search.store.ts
 import { computed, inject } from '@angular/core';
 import {
   patchState, signalStore, withComputed, withHooks, withMethods, withState,
@@ -256,19 +264,19 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
 import { pipe, switchMap, tap, debounceTime, filter, distinctUntilChanged } from 'rxjs';
-import { InstrumentSearchRepository } from './instrument-search.repository';
-import { InstrumentSearchResult } from './instrument-search.models';
-import { RecentSearchService } from './recent-search.service';
+import { SearchRepository } from './search.repository';
+import { SearchResult } from './search.models';
+import { SearchStorageProvider } from './search-storage.provider';
 
-interface InstrumentSearchState {
+interface SearchState {
   readonly query: string;
-  readonly results: readonly InstrumentSearchResult[];
+  readonly results: readonly SearchResult[];
   readonly loading: boolean;
   readonly error: string | null;
   readonly hasSearched: boolean;  // distinguishes "no results" from "hasn't searched yet"
 }
 
-const initialState: InstrumentSearchState = {
+const initialState: SearchState = {
   query: '',
   results: [],
   loading: false,
@@ -276,7 +284,7 @@ const initialState: InstrumentSearchState = {
   hasSearched: false,
 };
 
-export const InstrumentSearchStore = signalStore(
+export const SearchStore = signalStore(
   withState(initialState),
 
   withComputed((store) => ({
@@ -288,7 +296,15 @@ export const InstrumentSearchStore = signalStore(
     normalizedQuery: computed(() => store.query().trim().toLowerCase()),
   })),
 
-  withMethods((store, repo = inject(InstrumentSearchRepository), recents = inject(RecentSearchService)) => ({
+  withComputed(() => {
+    const storage = inject(SearchStorageProvider);
+    return {
+      /** Recent searches — delegates to the root-scoped storage provider. */
+      recents: computed(() => storage.recentList()),
+    };
+  }),
+
+  withMethods((store, repo = inject(SearchRepository), storage = inject(SearchStorageProvider)) => ({
 
     /**
      * Primary search method. Accepts a raw query string (from ionInput).
@@ -328,8 +344,13 @@ export const InstrumentSearchStore = signalStore(
     ),
 
     /** Record a selected result as a recent search. */
-    recordRecentSearch(result: InstrumentSearchResult): void {
-      recents.add(result);
+    recordRecentSearch(result: SearchResult): void {
+      storage.add(result);
+    },
+
+    /** Remove a recent search by ticker. */
+    removeRecent(ticker: string): void {
+      storage.remove(ticker);
     },
 
     /** Reset store to initial state (on destroy / modal dismiss). */
@@ -365,22 +386,29 @@ function normalizeError(e: unknown): string {
 | `hasSearched` flag | Distinguishes three UI states: initial (show recents), loading, and "no results found". Without this flag, "no results" and "hasn't searched" are ambiguous. |
 | `finalize` clears loading | Prevents stuck spinners on error or cancellation. Non-negotiable. |
 | Feature-scoped store | Search results are transient. New search session = fresh state. No stale results from a previous search leaking into a new modal/page. |
+| Internal `SearchStorageProvider` | Recents are persistent (survive across sessions). A root-scoped provider owns localStorage read/write. The store delegates to it via `withComputed` and `withMethods` — feature components inject only `SearchStore`. |
 
-### 5.3 Recent Searches Service (Root-Scoped)
+### 5.3 SearchStorageProvider (Internal, Root-Scoped)
 
-Recent searches survive across search sessions and app restarts. This is a separate
-root-scoped service with `localStorage` persistence — not part of the transient search store.
+Recent searches survive across search sessions and app restarts. A root-scoped
+`SearchStorageProvider` owns `localStorage` persistence. This provider is **internal to the
+`data-access` layer** — it is NOT exported in the public API. Feature components never inject
+it directly; they access recents through `SearchStore` which delegates to the provider.
+
+Multiple `SearchStore` instances (page + modal) share the same `SearchStorageProvider`
+singleton. Transient state (query, results, loading) is scoped per store instance; persistent
+state (recents) is shared through the provider.
 
 ```typescript
-// data-access/recent-search.service.ts
+// data-access/search-storage.provider.ts  (internal — not exported from library)
 import { Injectable, signal, computed } from '@angular/core';
-import { RecentSearch, InstrumentSearchResult } from './instrument-search.models';
+import { RecentSearch, SearchResult } from './search.models';
 
 const STORAGE_KEY = 'plynk_recent_searches';
 const MAX_RECENTS = 10;
 
 @Injectable({ providedIn: 'root' })
-export class RecentSearchService {
+export class SearchStorageProvider {
   private readonly _recents = signal<readonly RecentSearch[]>(this.loadFromStorage());
 
   readonly recents = this._recents.asReadonly();
@@ -390,7 +418,7 @@ export class RecentSearchService {
     [...this._recents()].sort((a, b) => b.searchedAt - a.searchedAt).slice(0, MAX_RECENTS),
   );
 
-  add(result: InstrumentSearchResult): void {
+  add(result: SearchResult): void {
     const entry: RecentSearch = {
       ticker: result.ticker,
       name: result.name,
@@ -471,14 +499,13 @@ import {
 import {
   IonSearchbar, IonList, IonSpinner, IonText,
 } from '@ionic/angular/standalone';
-import { InstrumentSearchStore } from '../data-access/instrument-search.store';
-import { RecentSearchService } from '../data-access/recent-search.service';
-import { InstrumentSearchResult, RecentSearch } from '../data-access/instrument-search.models';
+import { SearchStore } from '../data-access/search.store';
+import { SearchResult, RecentSearch } from '../data-access/search.models';
 import { SearchResultItemComponent } from './search-result-item.component';
 import { SearchEmptyStateComponent } from './search-empty-state.component';
 
 @Component({
-  selector: 'app-search-result-list',
+  selector: 'lib-search-result-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonSearchbar, IonList, IonSpinner, IonText,
@@ -505,10 +532,10 @@ import { SearchEmptyStateComponent } from './search-empty-state.component';
     }
 
     @if (store.showInitialState()) {
-      <app-search-empty-state
-        [recents]="recentsService.recentList()"
+      <lib-search-empty-state
+        [recents]="store.recents()"
         (recentSelected)="onRecentSelected($event)"
-        (recentRemoved)="recentsService.remove($event)"
+        (recentRemoved)="store.removeRecent($event)"
       />
     }
 
@@ -531,7 +558,7 @@ import { SearchEmptyStateComponent } from './search-empty-state.component';
     @if (store.results().length > 0) {
       <ion-list>
         @for (result of store.results(); track result.ticker) {
-          <app-search-result-item
+          <lib-search-result-item
             [result]="result"
             (selected)="onResultSelected($event)"
           />
@@ -541,11 +568,10 @@ import { SearchEmptyStateComponent } from './search-empty-state.component';
   `,
 })
 export class SearchResultListComponent implements OnInit {
-  protected readonly store = inject(InstrumentSearchStore);
-  protected readonly recentsService = inject(RecentSearchService);
+  protected readonly store = inject(SearchStore);
 
   /** Emitted when user taps a search result or a recent search. Parent handles navigation. */
-  readonly resultSelected = output<InstrumentSearchResult>();
+  readonly resultSelected = output<SearchResult>();
 
   ngOnInit(): void {
     // Focus searchbar on mount for immediate typing
@@ -557,14 +583,14 @@ export class SearchResultListComponent implements OnInit {
     this.store.search(query);
   }
 
-  protected onResultSelected(result: InstrumentSearchResult): void {
+  protected onResultSelected(result: SearchResult): void {
     this.store.recordRecentSearch(result);
     this.resultSelected.emit(result);
   }
 
   protected onRecentSelected(recent: RecentSearch): void {
     // Convert recent to a search result shape for navigation
-    const result: InstrumentSearchResult = {
+    const result: SearchResult = {
       ticker: recent.ticker,
       name: recent.name,
       instrumentType: recent.instrumentType,
@@ -587,10 +613,10 @@ store own the timing.
 // ui/search-result-item.component.ts
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { IonItem, IonLabel, IonAvatar, IonBadge, IonImg } from '@ionic/angular/standalone';
-import { InstrumentSearchResult } from '../data-access/instrument-search.models';
+import { SearchResult } from '../data-access/search.models';
 
 @Component({
-  selector: 'app-search-result-item',
+  selector: 'lib-search-result-item',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonItem, IonLabel, IonAvatar, IonBadge, IonImg],
   template: `
@@ -624,8 +650,8 @@ import { InstrumentSearchResult } from '../data-access/instrument-search.models'
   `],
 })
 export class SearchResultItemComponent {
-  readonly result = input.required<InstrumentSearchResult>();
-  readonly selected = output<InstrumentSearchResult>();
+  readonly result = input.required<SearchResult>();
+  readonly selected = output<SearchResult>();
 }
 ```
 
@@ -635,10 +661,10 @@ export class SearchResultItemComponent {
 // ui/search-empty-state.component.ts
 import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
 import { IonList, IonItem, IonLabel, IonItemSliding, IonItemOptions, IonItemOption, IonText } from '@ionic/angular/standalone';
-import { RecentSearch } from '../data-access/instrument-search.models';
+import { RecentSearch } from '../data-access/search.models';
 
 @Component({
-  selector: 'app-search-empty-state',
+  selector: 'lib-search-empty-state',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonList, IonItem, IonLabel, IonItemSliding, IonItemOptions, IonItemOption, IonText],
   template: `
@@ -686,33 +712,33 @@ See `docs/ionic-angular/ionic-angular-navigation.md` Section 6.6–6.8 for the f
 The key contracts:
 
 **SearchPageComponent** (routed):
-- Provides `InstrumentSearchStore` at the component level (fresh instance per route activation).
+- Provides `SearchStore` at the component level (fresh instance per route activation).
 - `ion-back-button` in start slot, `defaultHref` derived from current tab.
 - `onResultSelected(result)` → `navCtrl.navigateForward([tabRoot, 'asset', result.ticker])`.
 
 **SearchModalComponent** (modal):
-- Provides `InstrumentSearchStore` at the component level.
+- Provides `SearchStore` at the component level.
 - X close button in end slot.
 - `onResultSelected(result)` → `modalCtrl.dismiss(result, 'select')`.
 - `close()` → `modalCtrl.dismiss(null, 'cancel')`.
 
 **SearchModalService** (root-scoped):
-- `open(): Promise<InstrumentSearchResult | null>` — presents modal, returns selected result.
+- `open(): Promise<SearchResult | null>` — presents modal, returns selected result.
 - Caller navigates to PDP after receiving result.
 
-**Store Scoping:** Both wrappers provide `InstrumentSearchStore` in their own `providers` array:
+**Store Scoping:** Both wrappers provide `SearchStore` in their own `providers` array:
 
 ```typescript
 // In SearchPageComponent
 @Component({
   // ...
-  providers: [InstrumentSearchStore],
+  providers: [SearchStore],
 })
 
 // In SearchModalComponent
 @Component({
   // ...
-  providers: [InstrumentSearchStore],
+  providers: [SearchStore],
 })
 ```
 
@@ -774,7 +800,7 @@ This is handled inside the `rxMethod` pipe — see the `tap` before `filter` in 
 ### 8.1 The Contract
 
 When a user taps a search result, the search feature's responsibility ends at emitting the
-selected `InstrumentSearchResult` via the `resultSelected` output. **The navigation to PDP
+selected `SearchResult` via the `resultSelected` output. **The navigation to PDP
 is entirely owned by the feature wrapper** (page or modal).
 
 This separation ensures:
@@ -827,7 +853,7 @@ The search screen must never show an empty white screen:
 
 | State | What to show |
 |---|---|
-| Initial (no query) | Recent searches (from `RecentSearchService`) |
+| Initial (no query) | Recent searches (from `SearchStore`) |
 | Typing (loading) | Keep previous results visible + spinner at top |
 | Results arrived | Result list |
 | No results | "No results for [query]" message |
@@ -844,15 +870,15 @@ For repeat queries (user types "AAPL", navigates to PDP, comes back, types "AAPL
 cache at the repository level:
 
 ```typescript
-// data-access/instrument-search.repository.ts (enhanced)
+// data-access/search.repository.ts (enhanced)
 private readonly cache = new Map<string, {
-  results: readonly InstrumentSearchResult[];
+  results: readonly SearchResult[];
   timestamp: number;
 }>();
 
 private readonly CACHE_TTL = 60_000; // 1 minute
 
-search$(query: string): Observable<readonly InstrumentSearchResult[]> {
+search$(query: string): Observable<readonly SearchResult[]> {
   const normalized = query.trim().toLowerCase();
   const cached = this.cache.get(normalized);
 
@@ -861,7 +887,7 @@ search$(query: string): Observable<readonly InstrumentSearchResult[]> {
   }
 
   return this.http
-    .get<readonly InstrumentSearchResultDto[]>('/api/instruments/search', {
+    .get<readonly SearchResultDto[]>('/api/instruments/search', {
       params: { q: query },
     })
     .pipe(
@@ -875,7 +901,7 @@ search$(query: string): Observable<readonly InstrumentSearchResult[]> {
 session). The repository is root-scoped — cache survives across search sessions within the
 same app lifecycle.
 
-**TTL of 60s** is appropriate for instrument search — ticker symbols and company names don't
+**TTL of 60s** is appropriate for search — ticker symbols and company names don't
 change frequently. Prices are NOT in search results (they're on PDP).
 
 ### 9.3 Logo Preloading
@@ -975,16 +1001,16 @@ This is the recommended build order. Each step is independently testable.
 
 ### Phase 1: Data Layer
 
-1. **Models** — Create `instrument-search.models.ts` with `InstrumentSearchResultDto`,
-   `InstrumentSearchResult`, `RecentSearch` interfaces.
-2. **Repository** — Create `instrument-search.repository.ts` with `search$()` method
+1. **Models** — Create `search.models.ts` with `SearchResultDto`,
+   `SearchResult`, `RecentSearch` interfaces.
+2. **Repository** — Create `search.repository.ts` with `search$()` method
    and DTO→domain mapping. Initially mock the HTTP response for development.
-3. **Recent Search Service** — Create `recent-search.service.ts` with localStorage
-   persistence.
+3. **SearchStorageProvider** — Create `search-storage.provider.ts` (internal to data-access,
+   not exported). Root-scoped provider with localStorage persistence for recent searches.
 
 ### Phase 2: State Layer
 
-4. **Store** — Create `instrument-search.store.ts` with `rxMethod<string>` search pipe,
+4. **Store** — Create `search.store.ts` with `rxMethod<string>` search pipe,
    computed signals, and `recordRecentSearch` method.
 5. **Store Tests** — Test debounce, switchMap cancellation, error handling, state transitions.
 
@@ -1003,7 +1029,7 @@ This is the recommended build order. Each step is independently testable.
    Wire `resultSelected` → `navigateForward` to PDP.
 10. **SearchModalComponent** — Modal wrapper with X close. Provides store.
     Wire `resultSelected` → `modalCtrl.dismiss(result)`.
-11. **SearchModalService** — Root-scoped, presents modal, returns `Promise<InstrumentSearchResult | null>`.
+11. **SearchModalService** — Root-scoped, presents modal, returns `Promise<SearchResult | null>`.
 
 ### Phase 5: Integration
 
