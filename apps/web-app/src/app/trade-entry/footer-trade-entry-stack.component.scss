@@ -1,0 +1,156 @@
+// :host is the fixed container -- lives outside ion-footer so the stack
+// can overflow upward without being clipped by ion-toolbar's contain:paint.
+:host {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+// ─── Action stack ────────────────────────────────────────────────────────────
+// Uses column-reverse so array[0] (Buy) sits closest to Invest.
+// Each .action-slot clips its content and acts as the "slot" the button
+// slides out of -- like a card being dealt from the bottom of a deck.
+
+.trade-entry-stack-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 5px;
+  position: absolute;
+  bottom: 100%;
+  left: 16px;
+  right: 16px;
+  padding-bottom: 6px;
+  pointer-events: none;
+
+  &.expanded {
+    pointer-events: auto;
+  }
+}
+
+// Each slot clips the button so it appears to emerge from a hidden pocket.
+// overflow:hidden here creates the "slot" effect.
+.action-slot {
+  overflow: hidden;
+  border-radius: 14px;
+
+  ion-button.trade-entry-action-btn {
+    // Start: fully below the slot (hidden by overflow:hidden on parent)
+    transform: translateY(100%);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1)
+      calc(var(--i, 0) * 55ms);
+    --border-radius: 14px;
+    margin: 0;
+  }
+}
+
+// When expanded: buttons slide up out of their slots one by one.
+// Stagger is driven by --i (index), lowest index = first to appear (closest to Invest).
+.trade-entry-stack-actions.expanded .action-slot ion-button.trade-entry-action-btn {
+  transform: translateY(0);
+}
+
+// Collapse: all buttons slide back down simultaneously (snap away, no linger).
+.trade-entry-stack-actions:not(.expanded) .action-slot ion-button.trade-entry-action-btn {
+  transition-duration: 160ms;
+  transition-delay: 0ms;
+  transition-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+// ─── Footer / toolbar ────────────────────────────────────────────────────────
+
+ion-footer {
+  ion-toolbar {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 8px;
+    --padding-bottom: 12px;
+    --background: #fafafa;
+    --border-color: #e0e0e0;
+  }
+}
+
+.trade-entry-toolbar-inner {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+// ─── Toggle button: Invest <-> X ─────────────────────────────────────────────
+
+ion-button.trade-entry-toggle-btn {
+  --border-radius: 14px;
+
+  // Smooth fill → outline transition via the native shadow part
+  &::part(native) {
+    transition:
+      background 250ms cubic-bezier(0.4, 0, 0.2, 1),
+      color      250ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+// The label wrapper stacks "Invest" and the close icon on top of each other.
+// We rotate and scale each layer in/out for a flip-like morph effect.
+.toggle-label {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+
+  .label-invest,
+  ion-icon.label-close {
+    grid-area: 1 / 1;
+  }
+
+  // "Invest" exits with a plain ease — no bounce
+  .label-invest {
+    opacity: 1;
+    transition:
+      opacity 180ms ease;
+  }
+
+  // X icon enters/exits with a spring bounce
+  ion-icon.label-close {
+    font-size: 22px;
+    opacity: 0;
+    transform: scale(0.4) rotate(-90deg);
+    transition:
+      transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity   200ms ease;
+  }
+}
+
+// When open: hide "Invest", reveal X with a spring spin-in
+ion-button.trade-entry-toggle-btn.is-open .toggle-label {
+  .label-invest {
+    opacity: 0;
+  }
+
+  ion-icon.label-close {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+// ─── Reduced motion ──────────────────────────────────────────────────────────
+
+@media (prefers-reduced-motion: reduce) {
+  .action-slot ion-button.trade-entry-action-btn {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .toggle-label .label-invest,
+  .toggle-label ion-icon.label-close {
+    transition-duration: 0ms !important;
+  }
+
+  ion-button.trade-entry-toggle-btn::part(native) {
+    transition-duration: 0ms !important;
+  }
+}
