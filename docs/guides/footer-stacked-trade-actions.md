@@ -275,8 +275,8 @@ Provide `provideIonicAngular({ mode: 'ios' })` in the app config. Do not use `Io
         class="trade-entry-action-btn"
         [style.transition-delay]="expanded() ? (i * 55) + 'ms' : '0ms'"
         [disabled]="action.disabled ?? false"
-        [attr.tabindex]="expanded() ? 0 : -1"
-        (click)="actionSelected.emit(action)"
+        [attr.tabindex]="actionsInteractive() ? 0 : -1"
+        (click)="onActionTap(action)"
       >
         {{ action.label }}
       </ion-button>
@@ -295,7 +295,7 @@ Provide `provideIonicAngular({ mode: 'ios' })` in the app config. Do not use `Io
         [class.is-open]="expanded()"
         [attr.aria-expanded]="expanded()"
         aria-controls="trade-entry-stack"
-        (click)="toggle.emit()"
+        (click)="onToggleTap()"
       >
         <span class="toggle-label">
           <span class="label-invest">{{ toggleLabel() }}</span>
@@ -345,6 +345,7 @@ Provide `provideIonicAngular({ mode: 'ios' })` in the app config. Do not use `Io
 
   ion-button.trade-entry-action-btn {
     transform: translateY(100%); // fully below slot, hidden by overflow:hidden
+    will-change: transform; // pre-promote GPU layer in WKWebView / Android WebView
     transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
     // Stagger delay is bound inline via [style.transition-delay] -- do not set delay here
     --border-radius: 14px;
@@ -482,8 +483,6 @@ readonly tradeEntryActions = computed<readonly TradeEntryAction[]>(() => {
 });
 ```
 
-Note: `tone` is optional metadata. Omit it when not needed by downstream analytics or future conditional logic.
-
 ### 7.3 Event Handlers
 
 ```typescript
@@ -538,7 +537,7 @@ Parent resolves these before passing actions to child. Child receives final rend
 
 ---
 
-## 8. Reliability and WebView Compatibility
+## 9. Reliability and WebView Compatibility
 
 This is a trade entry flow. Animation glitches or accidental taps have direct user trust consequences. Four protections are in place:
 
@@ -610,7 +609,7 @@ ion-button.trade-entry-action-btn {
 
 ---
 
-## 9. Accessibility
+## 10. Accessibility
 
 - Invest/close button: `[attr.aria-expanded]="expanded()"` and `aria-controls="trade-entry-stack"`
 - Close icon: `aria-hidden="true"` (decorative; button label text provides the accessible name)
@@ -620,7 +619,7 @@ ion-button.trade-entry-action-btn {
 
 ---
 
-## 10. Edge Cases
+## 11. Edge Cases
 
 | Case | Behavior |
 |---|---|
@@ -628,11 +627,11 @@ ion-button.trade-entry-action-btn {
 | One action only | Stack still works. Single button reveals on expand. |
 | Modal launch failure | Stack is already collapsed. Parent handles error. Child is uninvolved. |
 | Context changes while expanded | Parent recomputes `tradeEntryActions`. Child re-renders. Parent may collapse. |
-| Component rendered in a constrained frame | Apply `transform: translateZ(0)` on the frame to scope fixed positioning. See section 3.5. |
+| Component rendered in a constrained frame | Apply `transform: translateZ(0)` on the frame to scope fixed positioning. See section 3.4. |
 
 ---
 
-## 11. Performance Rules
+## 12. Performance Rules
 
 Required:
 - CSS `transform` only for action button animation (GPU-composited, no layout reflow)
@@ -644,7 +643,7 @@ Forbidden:
 
 ---
 
-## 12. Testing Requirements
+## 13. Testing Requirements
 
 ### Child Component Tests
 
@@ -654,7 +653,7 @@ Forbidden:
 - Applies `expanded` class on `.trade-entry-stack-actions` when `expanded` input is true
 - Applies `is-open` class on toggle button when `expanded` is true
 - Collapsed state: action buttons have `tabindex="-1"`
-- Each `.action-slot` receives the correct `--i` CSS custom property value
+- Each `ion-button.trade-entry-action-btn` receives the correct `[style.transition-delay]` inline value when expanded (`i * 55ms`) and `0ms` when collapsed
 
 ### Parent Page Tests
 
@@ -677,7 +676,7 @@ Forbidden:
 
 ---
 
-## 13. Implementation Sequence
+## 14. Implementation Sequence
 
 **Phase 1 -- Structure**
 1. Create `TradeEntryAction` and `TradeIntent` types in domain models
@@ -694,7 +693,7 @@ Forbidden:
 **Phase 3 -- Motion**
 1. Wrap each action button in `.action-slot` with `overflow: hidden`
 2. Apply `translateY(100%)` collapsed state; `translateY(0)` expanded state
-3. Bind `--i` CSS custom property per slot for stagger
+3. Bind `[style.transition-delay]` inline per button: `expanded() ? (i * 55) + 'ms' : '0ms'` — do not use CSS custom properties for stagger (unreliable through shadow DOM)
 4. Add toggle label overlay (grid, `.label-invest` + `.label-close` icon)
 5. Add `[fill]` binding + `::part(native)` transition for solid/outline switch
 6. Add `prefers-reduced-motion` block
@@ -706,7 +705,7 @@ Forbidden:
 
 ---
 
-## 14. Constraints
+## 15. Constraints
 
 Do not implement:
 - Outside-tap-to-close backdrop
@@ -718,7 +717,7 @@ Do not implement:
 
 ---
 
-## 15. Agent Directives
+## 16. Agent Directives
 
 When implementing this feature, follow these rules without exception:
 
