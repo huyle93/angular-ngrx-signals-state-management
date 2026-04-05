@@ -78,10 +78,12 @@ Each action button lives inside an `.action-slot` wrapper with `overflow: hidden
 - Expand easing: `cubic-bezier(0.22, 1, 0.36, 1)` (snappy spring deceleration, 260ms)
 - Collapse easing: `cubic-bezier(0.55, 0, 1, 0.45)` (quick snap-back, 160ms with no per-button delay)
 
-Stagger on expand: `calc(var(--i) * 55ms)` where `--i` is the CSS custom property of the item index.
+Stagger on expand: `[style.transition-delay]="expanded() ? (i * 55) + 'ms' : '0ms'"` bound directly on each `ion-button`. Inline styles override CSS and cross web component boundaries reliably.
 - Item 0 (Buy): 0ms delay -- appears first
 - Item 1 (Recurring Buy): 55ms
 - Item 2 (Sell): 110ms
+
+Do not use CSS custom properties (`var(--i)`) for stagger timing on Ionic web components. Custom property inheritance through shadow DOM boundaries is unreliable in this context.
 
 Stagger on collapse: all buttons collapse simultaneously (no delay), shortest duration.
 
@@ -236,8 +238,8 @@ readonly toggle = output<void>();
 readonly actionSelected = output<TradeEntryAction>();
 ```
 
-- `toggle`: user tapped the Invest/close button
-- `actionSelected`: user tapped a specific trade entry action. Emits full action object.
+- `toggle`: fires only after the double-tap guard clears. The component throttles this to one emission per `TOGGLE_GUARD_MS` (350ms).
+- `actionSelected`: fires only after `actionsInteractive` settles (post-animation). Never fires while buttons are still sliding in.
 
 ### 6.3 Ionic Standalone Imports
 
@@ -265,12 +267,13 @@ Provide `provideIonicAngular({ mode: 'ios' })` in the app config. Do not use `Io
   [class.expanded]="expanded()"
 >
   @for (action of actions(); track action.id; let i = $index) {
-    <div class="action-slot" [style.--i]="i">
+    <div class="action-slot">
       <ion-button
         expand="block"
         fill="solid"
         color="primary"
         class="trade-entry-action-btn"
+        [style.transition-delay]="expanded() ? (i * 55) + 'ms' : '0ms'"
         [disabled]="action.disabled ?? false"
         [attr.tabindex]="expanded() ? 0 : -1"
         (click)="actionSelected.emit(action)"
@@ -342,8 +345,8 @@ Provide `provideIonicAngular({ mode: 'ios' })` in the app config. Do not use `Io
 
   ion-button.trade-entry-action-btn {
     transform: translateY(100%); // fully below slot, hidden by overflow:hidden
-    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1)
-      calc(var(--i, 0) * 55ms);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    // Stagger delay is bound inline via [style.transition-delay] -- do not set delay here
     --border-radius: 14px;
     margin: 0;
   }
@@ -354,10 +357,9 @@ Provide `provideIonicAngular({ mode: 'ios' })` in the app config. Do not use `Io
   transform: translateY(0);
 }
 
-// Collapse: all snap back uniformly, no delay
+// Collapse: all snap back uniformly. [style.transition-delay] is 0ms when collapsed.
 .trade-entry-stack-actions:not(.expanded) .action-slot ion-button.trade-entry-action-btn {
   transition-duration: 160ms;
-  transition-delay: 0ms;
   transition-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
 }
 
@@ -536,6 +538,78 @@ Parent resolves these before passing actions to child. Child receives final rend
 
 ---
 
+## 8. Reliability and WebView Compatibility
+
+This is a trade entry flow. Animation glitches or accidental taps have direct user trust consequences. Four protections are in place:
+
+### 8.1 Double-tap Toggle Guard
+
+Rapid double-taps on the toggle button are blocked at the component level. Only one `toggle` emission is allowed per `TOGGLE_GUARD_MS` (350ms). Subsequent taps within that window are silently dropped.
+
+```typescript
+const TOGGLE_GUARD_MS = 350;
+
+protected onToggleTap(): void {
+  if (this.toggleGuardActive) return;
+  this.toggleGuardActive = true;
+  this.toggleGuardTimer = setTimeout(() => {
+    this.toggleGuardActive = false;
+    this.toggleGuardTimer = null;
+  }, TOGGLE_GUARD_MS);
+  this.toggle.emit();
+}
+```
+
+350ms covers the full animation window (260ms slide + 110ms max stagger) and matches the perceived animation duration for any number of actions up to the expected maximum.
+
+### 8.2 Mid-Animation Action Tap Guard
+
+`pointer-events: auto` is set on the stack container the instant `.expanded` is applied, before any button is visually in its final position. Without a guard, a tap at 50ms could register on a half-visible button — an accidental trade action selection.
+
+`actionsInteractive` is a `signal(false)` that goes `true` only after the last button's animation settles:
+
+```typescript
+const settleMs = 260 + (this.actions().length - 1) * 55 + 20; // duration + stagger + buffer
+this.settleTimer = setTimeout(() => this.actionsInteractive.set(true), settleMs);
+```
+
+All action tap handlers check this gate:
+
+```typescript
+protected onActionTap(action: TradeEntryAction): void {
+  if (!this.actionsInteractive()) return;
+  this.actionSelected.emit(action);
+}
+```
+
+On collapse, `actionsInteractive` is set to `false` immediately — not after the collapse animation.
+
+### 8.3 Timer Cleanup on Destroy
+
+Both timers (`settleTimer`, `toggleGuardTimer`) are tracked and cancelled on component destroy via `DestroyRef`:
+
+```typescript
+this.destroyRef.onDestroy(() => {
+  if (this.settleTimer !== null) clearTimeout(this.settleTimer);
+  if (this.toggleGuardTimer !== null) clearTimeout(this.toggleGuardTimer);
+});
+```
+
+This prevents stale callbacks from firing if the user navigates away during animation.
+
+### 8.4 GPU Compositing for WebView
+
+`will-change: transform` is declared on action button elements. This hints iOS WKWebView and Android WebView to pre-promote these elements to a GPU compositing layer before the first animation, preventing the CPU-path jank that can occur on first open in a hybrid Capacitor app.
+
+```scss
+ion-button.trade-entry-action-btn {
+  will-change: transform;
+  // ... other rules
+}
+```
+
+---
+
 ## 9. Accessibility
 
 - Invest/close button: `[attr.aria-expanded]="expanded()"` and `aria-controls="trade-entry-stack"`
@@ -658,6 +732,10 @@ When implementing this feature, follow these rules without exception:
 8. Toggle button label uses CSS grid overlay: `.label-invest` (opacity fade only) and `.label-close` icon (spring spin-in). Do not apply rotation or transform to `.label-invest`.
 9. Toggle button fill changes via `[fill]` binding + `::part(native)` CSS transition.
 10. Respect `prefers-reduced-motion` with `!important` overrides covering all three animation surfaces.
-11. Block interaction on collapsed actions: `pointer-events: none`, `tabindex="-1"`.
-12. Normalize modal launch through a single `TradeIntent`-based method in the parent.
-13. Keep the model serializable -- no callbacks, services, or routes in `TradeEntryAction`.
+11. Block interaction on collapsed actions: `pointer-events: none` on container, `tabindex="-1"` and JS guard on buttons.
+12. **Reliability — toggle guard:** wrap toggle emission in `onToggleTap()` with a boolean lock and `TOGGLE_GUARD_MS` (350ms) timeout. Never bind `(click)` directly to `toggle.emit()`.
+13. **Reliability — action guard:** use `actionsInteractive = signal(false)` gated by `effect()` + `setTimeout` to enable action taps only after expand animation fully settles. Wrap action emission in `onActionTap()`. Never bind `(click)` directly to `actionSelected.emit()`.
+14. **Reliability — cleanup:** always inject `DestroyRef` and cancel all `setTimeout` handles in `onDestroy`. Any component using timers must have this.
+15. **Reliability — WebView GPU:** declare `will-change: transform` on `ion-button.trade-entry-action-btn` to pre-promote composited layers in WKWebView/Android WebView.
+16. Normalize modal launch through a single `TradeIntent`-based method in the parent.
+17. Keep the model serializable -- no callbacks, services, or routes in `TradeEntryAction`.
