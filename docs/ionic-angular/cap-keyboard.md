@@ -136,7 +136,7 @@ adjusts `ctaBottomOffset()` accordingly. iOS behavior remains unchanged.
 ### In scope
 
 - Install and configure `@capacitor/keyboard` at the app level.
-- Create `KeyboardLayoutService` in `libs/plynk-mobile/shared/util/`.
+- Create `KeyboardLayoutService` in `libs/invest-app/shared/util/`.
 - Create a reusable SCSS mixin for keyboard-aware CTA bars.
 - Integrate the service into the existing trade ticket page (first consumer).
 - Document the integration pattern so future money-movement pages adopt it.
@@ -228,7 +228,7 @@ The keyboard utility is a cross-domain concern. It does not belong to the tradin
 any single domain. It lives in the shared utility layer.
 
 ```
-libs/plynk-mobile/shared/
+libs/invest-app/shared/
   util/
     keyboard-layout/
       keyboard-layout.service.ts       <-- KeyboardLayoutService
@@ -268,7 +268,7 @@ This is the complete service. It manages the Capacitor Keyboard plugin lifecycle
 reactive signals that consuming pages bind to in their templates.
 
 ```typescript
-// libs/plynk-mobile/shared/util/keyboard-layout/keyboard-layout.service.ts
+// libs/invest-app/shared/util/keyboard-layout/keyboard-layout.service.ts
 
 import { Injectable, signal, computed } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
@@ -410,7 +410,7 @@ A reusable SCSS mixin ensures all consuming pages apply identical CTA bar positi
 safe-area handling, and transition behavior. No page should hand-write these styles.
 
 ```scss
-// libs/plynk-mobile/shared/ui/styles/_keyboard-cta.scss
+// libs/invest-app/shared/ui/styles/_keyboard-cta.scss
 
 /// Applies fixed-bottom CTA bar behavior that responds to native keyboard events.
 /// The consuming component must:
@@ -487,7 +487,7 @@ For any page that has a decimal input and a fixed-bottom CTA bar:
 ```typescript
 // In the existing page component -- add these members, do not restructure the class.
 
-import { KeyboardLayoutService } from '@plynk-mobile/shared/util/keyboard-layout';
+import { KeyboardLayoutService } from '@invest-app/shared/util/keyboard-layout';
 
 // Inside the component class:
 protected readonly keyboardLayout = inject(KeyboardLayoutService);
@@ -521,7 +521,7 @@ The CTA container already exists in the page template. Add the two bindings:
 ### 10.4 Page SCSS pattern
 
 ```scss
-@use '@plynk-mobile/shared/ui/styles/keyboard-cta' as kbd;
+@use '@invest-app/shared/ui/styles/keyboard-cta' as kbd;
 
 :host {
   // On Android, --keyboard-safe-height locks the page to its pre-keyboard height.
@@ -544,7 +544,7 @@ The CTA container already exists in the page template. Add the two bindings:
 The trade ticket page already exists at:
 
 ```
-libs/plynk-mobile/trading/feature/trade-ticket.page.ts
+libs/invest-app/trading/feature/trade-ticket.page.ts
 ```
 
 It has a decimal amount input that opens the native keyboard, and a fixed-bottom CTA bar
@@ -557,7 +557,7 @@ Add the `KeyboardLayoutService` injection and lifecycle calls. Do not modify exi
 business logic, form setup, or store interactions.
 
 ```typescript
-import { KeyboardLayoutService } from '@plynk-mobile/shared/util/keyboard-layout';
+import { KeyboardLayoutService } from '@invest-app/shared/util/keyboard-layout';
 
 // Add to existing component class:
 protected readonly keyboardLayout = inject(KeyboardLayoutService);
@@ -602,7 +602,7 @@ Replace any existing CTA positioning styles with the shared mixin. Remove hand-w
 CTA class -- the mixin provides all of these.
 
 ```scss
-@use '@plynk-mobile/shared/ui/styles/keyboard-cta' as kbd;
+@use '@invest-app/shared/ui/styles/keyboard-cta' as kbd;
 
 :host {
   display: block;

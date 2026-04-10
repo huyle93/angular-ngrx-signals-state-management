@@ -15,7 +15,7 @@
 > - Stage 2 (UI modularity): `docs/guides/search-modular.arch.md`
 > - Navigation patterns: `docs/ionic-angular/ionic-angular-navigation.md` Section 6
 > - NgRx Signals conventions: `docs/copilot-samples/instructions/ngrx-signals.instructions.md`
-> - App context: `external-context/plynk-invest.app.md`
+> - App context: `external-context/invest.app.md`
 
 ---
 
@@ -75,10 +75,10 @@ The architecture must guarantee:
 
 ## 2. Feature Structure
 
-Following the domain 4-layer architecture from the Plynk workspace conventions:
+Following the domain 4-layer architecture from the workspace conventions:
 
 ```
-libs/plynk-mobile/search/
+libs/invest-app/search/
 ├── data-access/
 │   ├── search.store.ts              # NgRx SignalStore — owns all search domain state
 │   ├── search-storage.provider.ts   # Root-scoped persistence for recents (internal)
@@ -404,7 +404,7 @@ state (recents) is shared through the provider.
 import { Injectable, signal, computed } from '@angular/core';
 import { RecentSearch, SearchResult } from './search.models';
 
-const STORAGE_KEY = 'plynk_recent_searches';
+const STORAGE_KEY = 'invest_recent_searches';
 const MAX_RECENTS = 10;
 
 @Injectable({ providedIn: 'root' })
@@ -1054,6 +1054,6 @@ This is the recommended build order. Each step is independently testable.
 - Navigation architecture: `docs/ionic-angular/ionic-angular-navigation.md` Section 6
 - NgRx Signals patterns: `docs/copilot-samples/instructions/ngrx-signals.instructions.md`
 - NgRx Signals fundamentals: `docs/ngrx-signals/fundamentals/`
-- App architecture: `external-context/plynk-invest.app.md`
+- App architecture: `external-context/invest.app.md`
 - Ionic Searchbar API: https://ionicframework.com/docs/api/searchbar
 - Angular Signals: https://angular.dev/guide/signals

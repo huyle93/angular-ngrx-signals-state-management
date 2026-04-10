@@ -374,7 +374,7 @@ The component does not track instrument symbols. The parent decides when to snap
 Within the Nx workspace, these files belong in the UI layer of the relevant domain:
 
 ```
-libs/plynk-mobile/<domain>/ui/
+libs/invest-app/<domain>/ui/
   price-ticker.component.ts
   price-flash.directive.ts
 ```

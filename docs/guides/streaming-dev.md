@@ -651,7 +651,7 @@ The browser `EventSource` API handles SSE connections. Wrap it in an Observable 
 
 ### SSE Observable Factory
 
-Place in `data-access` layer (e.g., `libs/plynk-mobile/<domain>/data-access/sse.util.ts` or a shared utility).
+Place in `data-access` layer (e.g., `libs/invest-app/<domain>/data-access/sse.util.ts` or a shared utility).
 
 ```typescript
 import { Observable } from 'rxjs';
@@ -1408,7 +1408,7 @@ Even within the streaming-only fields, there are two sub-strategies:
 
 ### 12.4 Decision for This App
 
-For the Plynk investing app:
+For the investing app:
 
 - **Watchlist / Portfolio pages**: 5-50 symbols, 1-3 second ticks. Full tick payload is fine. Simpler client code.
 - **Market data firehose** (if ever needed): hundreds of symbols, sub-second. Delta payload. But that scenario is not in scope today.

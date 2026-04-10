@@ -2,7 +2,7 @@
 
 > TradingView Lightweight Charts (LWC) in Angular + Ionic + Capacitor
 >
-> AI coding reference for the Plynk Invest (Phoenix/v2) mobile app.
+> AI coding reference for the Invest App (Phoenix/v2) mobile app.
 
 ---
 
@@ -55,7 +55,7 @@ Forbidden:
 
 ### 2.2 lib-line-chart Wrapper (Shared UI Layer)
 
-Located at `libs/plynk-mobile/shared/chart-ui/lib-line-chart`. This is a reusable, presentational component shared across all domains that need a chart (portfolio, watchlist, trading, virtual portfolio).
+Located at `libs/invest-app/shared/chart-ui/lib-line-chart`. This is a reusable, presentational component shared across all domains that need a chart (portfolio, watchlist, trading, virtual portfolio).
 
 The wrapper owns chart truth: how to render without flicker, how to overlay visual states, and how to update efficiently per LWC docs.
 
@@ -464,7 +464,7 @@ Chart code follows the standard 4-layer domain structure.
 | `ui/` | `lib-line-chart` wrapper (shared), scrub legend overlay, live dot overlay (presentational only) |
 | `util/` | Pure functions: percent change math, time formatting, OHLC-to-area derivation, flat line synthesis |
 
-The shared wrapper lives at `libs/plynk-mobile/shared/chart-ui/lib-line-chart` because it is used by multiple domains (portfolio, watchlist, trading). Domain-specific chart configuration (baseline rules, timeframe options) stays in each domain's `data-access/` or `util/` layer.
+The shared wrapper lives at `libs/invest-app/shared/chart-ui/lib-line-chart` because it is used by multiple domains (portfolio, watchlist, trading). Domain-specific chart configuration (baseline rules, timeframe options) stays in each domain's `data-access/` or `util/` layer.
 
 Rules:
 
@@ -472,7 +472,7 @@ Rules:
 - Baseline computation and percent-change formulas live in `data-access/` or `util/`, never in templates.
 - One SignalStore per domain. Chart state lives in the relevant domain store (e.g., portfolio balance history store).
 - The wrapper component has zero knowledge of which domain is using it. It receives data and state; it renders.
-- `HapticsService` lives in the shared utility layer (`libs/plynk-mobile/shared/util/haptics`). The wrapper injects it for scrub feedback; feature layers inject it for business-event haptics (timeframe tap, trade confirmation).
+- `HapticsService` lives in the shared utility layer (`libs/invest-app/shared/util/haptics`). The wrapper injects it for scrub feedback; feature layers inject it for business-event haptics (timeframe tap, trade confirmation).
 
 ---
 
@@ -937,7 +937,7 @@ Design principles (Apple + Material guidelines):
 
 All haptic calls go through a shared `HapticsService`. Never call the Capacitor plugin directly from components.
 
-Location: `libs/plynk-mobile/shared/util/haptics/haptics.service.ts`
+Location: `libs/invest-app/shared/util/haptics/haptics.service.ts`
 
 ```typescript
 import { Injectable } from '@angular/core';
@@ -1203,7 +1203,7 @@ Navigate in and out of the chart page repeatedly and verify:
 
 ### Haptic Feedback
 
-- [ ] `HapticsService` created at `libs/plynk-mobile/shared/util/haptics/haptics.service.ts` with `isNative` platform guard
+- [ ] `HapticsService` created at `libs/invest-app/shared/util/haptics/haptics.service.ts` with `isNative` platform guard
 - [ ] `selectionStart()` called on `touchstart` when scrub begins
 - [ ] `selectionChanged()` fired only on bar index change (step policy via `param.time` comparison in `subscribeCrosshairMove`)
 - [ ] `selectionEnd()` called on `touchend` / `touchcancel`

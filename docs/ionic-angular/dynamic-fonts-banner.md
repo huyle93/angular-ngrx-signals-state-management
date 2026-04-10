@@ -1,6 +1,6 @@
 # Stacked Marketing Banner -- Dynamic Font Scaling Instructions
 
-> Context: Ionic Angular hybrid mobile investing app (iOS/Android via Capacitor WebView). Component lives in `libs/plynk-mobile/<domain>/ui/`. Built with Angular standalone components, signal-first reactivity, Ionic UI primitives, SCSS. The portfolio page surfaces this component.
+> Context: Ionic Angular hybrid mobile investing app (iOS/Android via Capacitor WebView). Component lives in `libs/invest-app/<domain>/ui/`. Built with Angular standalone components, signal-first reactivity, Ionic UI primitives, SCSS. The portfolio page surfaces this component.
 
 ---
 

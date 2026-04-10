@@ -233,7 +233,7 @@ VP feature imports `search/data-access` and `search/ui`. VP feature does not imp
 Target search domain structure:
 
 ```
-libs/plynk-mobile/search/
+libs/invest-app/search/
 ├── data-access/                                # Stage 1 (search.arch.md)
 │   ├── search.store.ts                         #   Component-scoped SignalStore (§5.1)
 │   ├── search-storage.provider.ts              #   Root-scoped recents persistence (§5.3, internal)
@@ -1022,7 +1022,7 @@ domain-specific UI. This is the reference pattern for any consumer domain.
 ### 9.1 VP File Structure
 
 ```
-libs/plynk-mobile/virtual-portfolio/
+libs/invest-app/virtual-portfolio/
 ├── feature/
 │   └── vp-search-picker-modal.component.ts   # VP-owned modal wrapper
 ├── ui/
@@ -1057,10 +1057,10 @@ import {
   IonButtons, IonButton, IonIcon, IonTitle, IonSearchbar,
 } from '@ionic/angular/standalone';
 import { ModalController } from '@ionic/angular/standalone';
-import { SearchStore, SearchResult, RecentSearch } from '@plynk-mobile/search/data-access';
-import { SearchPickerShellComponent } from '@plynk-mobile/search/ui';
-import { SearchResultsListComponent } from '@plynk-mobile/search/ui';
-import { ModalBottomAccessoryDirective } from '@plynk-mobile/search/ui';
+import { SearchStore, SearchResult, RecentSearch } from '@invest-app/search/data-access';
+import { SearchPickerShellComponent } from '@invest-app/search/ui';
+import { SearchResultsListComponent } from '@invest-app/search/ui';
+import { ModalBottomAccessoryDirective } from '@invest-app/search/ui';
 import { VpSelectionSummaryBarComponent } from '../ui/vp-selection-summary-bar.component';
 
 @Component({
