@@ -50,3 +50,6 @@ Thumbs.db
 
 # External apps context
 external-context/
+.nx/polygraph
+.claude/worktrees
+.claude/settings.local.json
