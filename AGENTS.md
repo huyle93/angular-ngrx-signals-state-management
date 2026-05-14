@@ -1,23 +1,41 @@
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
-# General Guidelines for working with Nx
+# Agent Guidelines
 
-- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
-- Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
-- You have access to the Nx MCP server and its tools, use them to help the user
-- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
-- NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
+## Nx Commands
 
-## Scaffolding & Generators
+- Always run tasks through `nx` (e.g., `pnpm nx test`, `npm exec nx build`)
+- Use `nx-workspace` skill to explore workspace structure
+- Use `nx-generate` skill for scaffolding tasks
+- Check `nx_docs` or `--help` before using unfamiliar flags
 
-- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
+## Available Tasks
 
-## When to use nx_docs
+```bash
+pnpm nx serve web-app        # Dev server at localhost:4200
+pnpm nx build web-app        # Production build
+pnpm nx lint web-app         # ESLint
+pnpm nx test web-app         # Vitest (inferred via @nx/vitest)
+pnpm nx graph                # Dependency visualization
+```
 
-- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
-- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
-- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
+## Angular 21 Conventions
+
+- **Zoneless**: Use `provideZonelessChangeDetection()` in `app.config.ts`
+- **Standalone**: No NgModules; use `standalone: true` and `imports: []`
+- **Control flow**: Use `@if`, `@for`, `@switch` (not `*ngIf`, etc.)
+- **Signals**: Use `signal()`, `computed()`, `effect()` for state; never mutate directly
+- **Testing**: Vitest with Angular TestBed; tests are co-located as `*.spec.ts`
+
+## What NOT to Use
+
+- NgModules, zone.js, `*ngIf`/`*ngFor`, Jest, barrel files (`index.ts`)
+
+## Documentation
+
+- `docs/` - human learning (concepts, guides, patterns)
+- `.github/copilot-instructions.md` - code generation rules
+- `.github/skills/` - agent task skills
 
 <!-- nx configuration end-->
