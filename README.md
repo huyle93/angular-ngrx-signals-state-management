@@ -13,7 +13,7 @@ This project uses [Nx](https://nx.dev) for monorepo management with the followin
 ```
 angular-ngrx-signals-state-management/
 ├── .github/                           # GitHub and Copilot configuration
-│   ├── copilot-instructions.md        # Auto-applied AI coding standards
+│   ├── AGENTS.md                      # Agent rules (all agents)
 │   ├── agents/                        # Custom Copilot agents (planned)
 │   ├── instructions/                  # Additional AI instructions (planned)
 │   ├── prompts/                       # Reusable Copilot prompts

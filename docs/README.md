@@ -54,7 +54,8 @@ Architectural Decision Records (ADR) documenting key technical decisions:
 ## Quick Links
 
 - [Project README](../README.md) - Workspace overview and setup
-- [Copilot Instructions](../.github/copilot-instructions.md) - AI coding standards
+- [AGENTS.md](../AGENTS.md) - AI coding rules (all agents)
+- [Agent Coding Standards](guides/agent-coding-standards.md) - code templates and expanded conventions
 - [Nx Documentation](https://nx.dev) - Monorepo management
 - [Angular Documentation](https://angular.dev) - Official Angular docs
 

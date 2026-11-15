@@ -15,7 +15,7 @@ Create a complete, production-ready Angular feature by following these steps:
 2. Add signal-based state management
 3. Create a co-located test file with Vitest
 4. Update app.routes.ts to include the new route
-5. Follow all patterns from copilot-instructions.md
+5. Follow all patterns from AGENTS.md and docs/guides/agent-coding-standards.md
 
 ## Required Patterns
 
@@ -73,5 +73,6 @@ apps/web-app/src/app/
 
 - [Component Skill](../skills/create-signal-component/SKILL.md)
 - [Test Skill](../skills/add-vitest-tests/SKILL.md)
-- [Copilot Instructions](../copilot-instructions.md)
+- [Agent Rules](../../AGENTS.md)
+- [Coding Standards Reference](../../docs/guides/agent-coding-standards.md)
 
