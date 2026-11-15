@@ -7,6 +7,10 @@ import { TradeEntryDemoComponent } from './trade-entry/trade-entry-demo.componen
 
 export const appRoutes: Route[] = [
   {
+    path: 'fi/:symbol',
+    loadComponent: () => import('@fi/web/fi-web.page').then((m) => m.FiWebPage),
+  },
+  {
     path: '',
     component: HomeComponent,
   },

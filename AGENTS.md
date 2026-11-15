@@ -5,7 +5,7 @@
 
 ## Nx Commands
 
-- Always run tasks through `nx` (e.g., `pnpm nx test`, `npm exec nx build`)
+- Always run tasks through `nx` (e.g., `npx nx test`, `npm exec nx build`)
 - Use `nx-workspace` skill to explore workspace structure
 - Use `nx-generate` skill for scaffolding tasks
 - Check `nx_docs` or `--help` before using unfamiliar flags
@@ -13,11 +13,11 @@
 ## Available Tasks
 
 ```bash
-pnpm nx serve web-app        # Dev server at localhost:4200
-pnpm nx build web-app        # Production build
-pnpm nx lint web-app         # ESLint
-pnpm nx test web-app         # Vitest (inferred via @nx/vitest)
-pnpm nx graph                # Dependency visualization
+npx nx serve web-app        # Dev server at localhost:4200
+npx nx build web-app        # Production build
+npx nx lint web-app         # ESLint
+npx nx test web-app         # Vitest (inferred via @nx/vitest)
+npx nx graph                # Dependency visualization
 ```
 
 ## Angular 21 Conventions
@@ -98,3 +98,11 @@ the gitignored deny-list `external-context/forbidden-terms.pattern` (installed v
 `prepare` npm script). If the hook blocks you, reword to neutral naming
 (e.g. `example app`, `mobile-app`); never use `--no-verify`. Never commit the deny-list
 itself — it contains the forbidden terms.
+
+## A3 adaptive FI slice
+
+Use npm and the checked-in package-lock. Read [the local task](docs/specs/a3-adaptive-fi.md), [ADR](docs/decisions/ADR-A3-adaptive-fi.md), and [run guide](docs/guides/adaptive-fi.md). No private source access is needed.
+
+`apps/mobile-reference` is an Ionic **browser** reference on port 4300; `web-app` remains the web entrypoint. `/fi/:symbol` resolves a different composition per app. `libs/fi/instrument` owns FI models/state/UI; `libs/fi/trading/feature` owns its local draft. Experience wrappers compose domains; domain projects must not import one another. `libs/fi/design` owns public appearance only. `eslint.config.cjs` is the canonical lint/boundary config. No viewport/theme flags in domain stores.
+
+Validate both builds, all affected lint/test targets, and `npx nx run instrument-data-access:boundary-check`; see the guide for the complete command. Record real results in `docs/validation/`. Keep synthetic data and original visuals only. No native, tenant-security, trading or production claim. A3 is an experiment pending human review, not permission to rename/publish/merge.

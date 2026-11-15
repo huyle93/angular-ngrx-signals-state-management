@@ -1,0 +1,104 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.25rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--fi-border);
+  background: var(--fi-surface);
+}
+.wordmark {
+  font-size: 1.35rem;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  text-decoration: none;
+  color: var(--fi-text);
+}
+.wordmark span {
+  color: var(--fi-action);
+  margin-right: 0.5rem;
+}
+.wordmark small {
+  font-weight: 400;
+  letter-spacing: 0;
+  font-size: 0.7rem;
+  margin-left: 0.75rem;
+  color: var(--fi-muted);
+  display: inline-block;
+}
+.workspace {
+  max-width: var(--fi-page-width);
+  margin: auto;
+  padding: clamp(1rem, 4vw, 3rem);
+  container-type: inline-size;
+}
+.page-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fi-muted);
+  margin: 0;
+}
+.page-top p {
+  margin: 0.25rem 0;
+}
+.fi-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--fi-gap);
+  align-items: start;
+}
+.fi-layout > * {
+  min-inline-size: 0;
+}
+/* 34rem chart + 19rem ticket + 1.5rem gap fit at 55rem of content. */
+@container (min-width:55rem) {
+  .fi-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 21rem);
+  }
+}
+footer {
+  margin-top: 2rem;
+  border-top: 1px solid var(--fi-border);
+  padding-top: 1rem;
+}
+footer > a {
+  display: inline-block;
+  min-height: 44px;
+  font-size: 0.85rem;
+  padding-top: 0.5rem;
+}
+nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--fi-border);
+  border-radius: 100px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+nav a[aria-current='page'] {
+  color: var(--fi-on-action);
+  background: var(--fi-action);
+  border-color: var(--fi-action);
+}

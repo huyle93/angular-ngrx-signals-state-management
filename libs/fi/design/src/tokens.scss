@@ -1,0 +1,92 @@
+// Public-example semantic map. These are visual themes, never tenant identities.
+.fi-theme {
+  --fi-bg: #f4f6f2;
+  --fi-surface: #ffffff;
+  --fi-text: #172d25;
+  --fi-muted: #52645b;
+  --fi-action: #205c43;
+  --fi-on-action: #ffffff;
+  --fi-border: #cad4cb;
+  --fi-focus: #9b3b09;
+  --fi-positive: #245e3f;
+  --fi-error: #a12527;
+  --fi-gap: 1.5rem;
+  --fi-radius: 16px;
+  --fi-page-width: 80rem;
+  --ion-background-color: var(--fi-bg);
+  --ion-text-color: var(--fi-text);
+  --ion-toolbar-background: var(--fi-surface);
+  --ion-toolbar-color: var(--fi-text);
+  --ion-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--ion-font-family);
+  color: var(--fi-text);
+  background: var(--fi-bg);
+  line-height: 1.5;
+  color-scheme: light;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  :focus-visible {
+    outline: 3px solid var(--fi-focus);
+    outline-offset: 3px;
+  }
+  a {
+    color: var(--fi-action);
+  }
+  button,
+  input,
+  select {
+    font-family: inherit;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    overflow-wrap: anywhere;
+  }
+  .fi-card {
+    background: var(--fi-surface);
+    border: 1px solid var(--fi-border);
+    border-radius: var(--fi-radius);
+    padding: clamp(1rem, 2.5vw, 1.75rem);
+  }
+  .fi-stack {
+    display: grid;
+    gap: var(--fi-gap);
+    min-inline-size: 0;
+  }
+  .fi-note {
+    color: var(--fi-muted);
+    font-size: 0.8rem;
+  }
+  .fi-status {
+    padding: 2rem 1rem;
+    background: var(--fi-surface);
+    border: 1px solid var(--fi-border);
+    border-radius: var(--fi-radius);
+  }
+  .fi-status button {
+    min-height: 44px;
+    background: var(--fi-action);
+    color: var(--fi-on-action);
+    border: 0;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+}
+html[data-demo-brand='b'] .fi-theme {
+  --fi-bg: #f3f2f8;
+  --fi-surface: #ffffff;
+  --fi-text: #27223d;
+  --fi-muted: #625975;
+  --fi-action: #573b8a;
+  --fi-on-action: #ffffff;
+  --fi-border: #d3cce0;
+  --fi-focus: #993800;
+  --fi-positive: #245e3f;
+  --fi-error: #a12527;
+  --fi-radius: 8px;
+}

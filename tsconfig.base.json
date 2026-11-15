@@ -13,13 +13,22 @@
     "lib": ["ES2022", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "paths": {},
+    "paths": {
+      "@fi/instrument-util/*": ["libs/fi/instrument/util/src/*"],
+      "@fi/instrument-data-access/*": ["libs/fi/instrument/data-access/src/*"],
+      "@fi/instrument-ui/*": ["libs/fi/instrument/ui/src/*"],
+      "@fi/trading/*": ["libs/fi/trading/feature/src/*"],
+      "@fi/web/*": ["libs/fi/experience/web/src/*"],
+      "@fi/mobile/*": ["libs/fi/experience/mobile/src/*"],
+      "@fi/design/*": ["libs/fi/design/src/*"]
+    },
     "esModuleInterop": true,
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "."
   },
   "exclude": ["node_modules", "tmp"]
 }

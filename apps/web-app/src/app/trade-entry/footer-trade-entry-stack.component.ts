@@ -37,15 +37,13 @@ const TOGGLE_GUARD_MS = 350;
       [class.expanded]="expanded()"
     >
       @for (action of actions(); track action.id; let i = $index) {
-        <div
-          class="action-slot"
-        >
+        <div class="action-slot">
           <ion-button
             expand="block"
             fill="solid"
             color="primary"
             class="trade-entry-action-btn"
-            [style.transition-delay]="expanded() ? (i * 55) + 'ms' : '0ms'"
+            [style.transition-delay]="expanded() ? i * 55 + 'ms' : '0ms'"
             [disabled]="action.disabled ?? false"
             [attr.tabindex]="actionsInteractive() ? 0 : -1"
             (click)="onActionTap(action)"
@@ -71,7 +69,11 @@ const TOGGLE_GUARD_MS = 350;
           >
             <span class="toggle-label">
               <span class="label-invest">{{ toggleLabel() }}</span>
-              <ion-icon name="close-outline" class="label-close" aria-hidden="true" />
+              <ion-icon
+                name="close-outline"
+                class="label-close"
+                aria-hidden="true"
+              />
             </span>
           </ion-button>
         </div>
@@ -85,7 +87,7 @@ export class FooterTradeEntryStackComponent {
   readonly expanded = input(false);
   readonly toggleLabel = input('Invest');
 
-  readonly toggle = output<void>();
+  readonly toggleRequested = output<void>();
   readonly actionSelected = output<TradeEntryAction>();
 
   /**
@@ -149,7 +151,7 @@ export class FooterTradeEntryStackComponent {
       this.toggleGuardActive = false;
       this.toggleGuardTimer = null;
     }, TOGGLE_GUARD_MS);
-    this.toggle.emit();
+    this.toggleRequested.emit();
   }
 
   /**

@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/web-app/src",
-  "tags": [],
+  "tags": ["scope:fi", "type:app", "domain:composition"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -60,7 +60,10 @@
       "defaultConfiguration": "development"
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/web-app/**/*.ts", "apps/web-app/**/*.html"]
+      }
     },
     "serve-static": {
       "continuous": true,

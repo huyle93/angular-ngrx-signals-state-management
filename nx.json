@@ -21,7 +21,7 @@
     },
     "lint": {
       "cache": true,
-      "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]
+      "inputs": ["default", "{workspaceRoot}/eslint.config.cjs"]
     },
     "@angular/build:application": {
       "cache": true,

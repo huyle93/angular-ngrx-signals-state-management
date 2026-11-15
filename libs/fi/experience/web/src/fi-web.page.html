@@ -1,0 +1,80 @@
+<header class="masthead">
+  <a routerLink="/fi/LUMA" class="wordmark"
+    ><span aria-hidden="true">◒</span> Fieldnotes
+    <small>an investing sandbox</small></a
+  ><app-theme-picker />
+</header>
+<div class="workspace">
+  <div class="page-top">
+    <div>
+      <p class="eyebrow">Discover / Instrument detail</p>
+      <p class="fi-note">Two fictional ideas. Room to explore.</p>
+    </div>
+    <nav aria-label="Synthetic instruments">
+      <a
+        routerLink="/fi/LUMA"
+        [attr.aria-current]="store.symbol() === 'LUMA' ? 'page' : null"
+        >LUMA</a
+      ><a
+        routerLink="/fi/TIDE"
+        [attr.aria-current]="store.symbol() === 'TIDE' ? 'page' : null"
+        >TIDE</a
+      >
+    </nav>
+  </div>
+  @switch (store.status()) { @case ('loading') {
+  <div class="fi-status" role="status">Loading synthetic instrument…</div>
+  } @case ('empty') {
+  <div class="fi-status" role="status">
+    <h1>No instrument data</h1>
+    <p>
+      No synthetic values are available for {{ store.symbol() }}. Choose LUMA or
+      TIDE, or try again.
+    </p>
+    <button type="button" (click)="store.load(store.symbol())">
+      Try again
+    </button>
+  </div>
+  } @case ('error') {
+  <div class="fi-status" role="alert">
+    <h1>Unable to load this idea</h1>
+    <p>{{ store.error() }}</p>
+    <button type="button" (click)="store.load(store.symbol())">
+      Try again
+    </button>
+  </div>
+  } } @if (store.instrument(); as instrument) { @if (store.stats(); as stats) {
+  <div class="fi-layout">
+    <div class="fi-stack">
+      <app-instrument-overview
+        class="fi-card"
+        [instrument]="instrument"
+        [stats]="stats"
+      />
+      <app-instrument-chart
+        class="fi-card"
+        [series]="store.series()"
+        [range]="store.range()"
+        (rangeChange)="store.setRange($event)"
+      />
+      <app-instrument-details
+        class="fi-card"
+        [instrument]="instrument"
+        [stats]="stats"
+      />
+    </div>
+    <aside aria-label="Demo trade ticket">
+      <app-demo-trade [symbol]="instrument.symbol" [price]="stats.price" />
+    </aside>
+  </div>
+  }}
+  <footer>
+    <p class="fi-note">
+      PUBLIC LEARNING EXAMPLE · Synthetic data. No brokerage service.
+    </p>
+    <app-demo-scenarios (scenario)="store.load(store.symbol(), $event)" /><a
+      routerLink="/"
+      >Back to all demos</a
+    >
+  </footer>
+</div>

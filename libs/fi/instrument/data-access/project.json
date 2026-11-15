@@ -1,0 +1,27 @@
+{
+  "name": "instrument-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/fi/instrument/data-access/src",
+  "prefix": "lib",
+  "tags": ["scope:fi", "type:data-access", "domain:instrument"],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project instrument-data-access --web",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/fi/instrument/data-access/**/*.ts",
+          "libs/fi/instrument/data-access/**/*.html"
+        ]
+      }
+    },
+    "boundary-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/check-boundaries.cjs"
+      },
+      "cache": false
+    }
+  }
+}
