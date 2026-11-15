@@ -18,3 +18,7 @@ Build one fictional instrument capability in two independently runnable Angular 
 No native host, Capacitor, broker integration, authentication, tenant isolation, repository rename, generic design system, broad migration or framework upgrade. Browser evidence says nothing about native safe areas, system back gestures or app stores. Prepare an unmerged PR; human review decides whether to keep this experiment. Do not label production readiness from a screenshot or passing unit tests.
 
 See [decision](../decisions/ADR-A3-adaptive-fi.md), [validation](../validation/a3-adaptive-fi.md), and [guide](../guides/adaptive-fi.md).
+
+## Preview follow-up
+
+Provide `/fi-preview` in the existing demo shell with Desktop web, Mobile web and Ionic mobile choices. Use one live iframe: web size changes preserve the same document and session; Ionic loads the separately served mobile-reference app. Offer 320px/390px phone sizes, reload and standalone links, and instructions for a stopped mobile server. Extract only the demo viewport chrome for reuse by FI and legacy trade-entry. Preserve trade-entry interactions and its 390×750 outer geometry. No preview flags or frame CSS enter domain state/UI. Keep standalone FI routes available. The phone frame is a browser viewport aid, not device emulation.

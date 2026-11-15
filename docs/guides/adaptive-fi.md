@@ -2,6 +2,16 @@
 
 Use Node 24.11.0 and npm 11.6.1 (the tested pair). Keep `package-lock.json`.
 
+For the preview playground, start both apps with one command (stop any existing serve commands first):
+
+```sh
+npx nx run web-app:serve-fi-demo
+```
+
+Open `http://localhost:4200/fi-preview`, or choose **Adaptive FI** from the existing demo navigation/home card. **Desktop web** and **Mobile web** resize the same embedded web page without resetting its chart or draft. Choose 320px or 390px phone width. **Ionic mobile** loads the actual separate app on port 4300, with its own session. Changing between web and Ionic, or selecting Reload preview, starts fresh. Open standalone launches the current app outside the frame for browser zoom and device testing. If port 4300 is unavailable, the Ionic tab includes the command to start it; reload after starting the server. The frame does not detect server readiness or assert a successful load.
+
+You can also run the entrypoints independently:
+
 ```sh
 npm ci
 npx nx serve web-app --port=4200
@@ -42,6 +52,8 @@ With both dev servers running on ports 4200 and 4300:
 
 ```sh
 NX_NO_CLOUD=true npx nx run web-app:browser-smoke
+# Preview switching, iframe continuity and trade-entry regression:
+NX_NO_CLOUD=true npx nx run web-app:preview-smoke
 ```
 
 This invokes the pinned Playwright CLI 0.1.24 through npm, opens a dedicated `a3` browser session and runs `tools/a3-browser-smoke.js`. Install its supported browser using `npx --package=@playwright/cli@0.1.24 playwright-cli install-browser` if requested by the CLI. It checks real UI interactions and emits JSON results; failures are propagated to Nx even when the CLI itself exits successfully. It refreshes the six screenshots under `output/playwright/a3/`; review those diffs before committing new evidence. This browser target is local/manual; the checked-in CI job runs build, lint, unit tests and negative boundary checks. Browser zoom and spoken screen-reader validation remain separate from the script.

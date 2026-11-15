@@ -23,7 +23,10 @@ function cli(args) {
 }
 try {
   cli(['open', 'http://localhost:4200/fi/LUMA', '--headed']);
-  const code = readFileSync('tools/a3-browser-smoke.js', 'utf8')
+  const code = readFileSync(
+    process.argv[2] || 'tools/a3-browser-smoke.js',
+    'utf8',
+  )
     .trim()
     .replace(/;$/, '');
   const output = cli(['run-code', code]);

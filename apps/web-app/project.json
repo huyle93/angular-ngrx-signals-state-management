@@ -80,6 +80,22 @@
         "command": "node tools/run-a3-browser-smoke.cjs"
       },
       "cache": false
+    },
+    "serve-fi-demo": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "cache": false,
+      "options": {
+        "command": "nx run-many -t serve -p web-app,mobile-reference --parallel=2",
+        "forwardAllArgs": false
+      }
+    },
+    "preview-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/run-a3-browser-smoke.cjs tools/a3-preview-smoke.js"
+      },
+      "cache": false
     }
   }
 }

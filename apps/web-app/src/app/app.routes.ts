@@ -32,6 +32,13 @@ export const appRoutes: Route[] = [
         component: PriceTickerDemoComponent,
       },
       {
+        path: 'fi-preview',
+        loadComponent: () =>
+          import('./demo-preview/fi-preview.component').then(
+            (m) => m.FiPreviewComponent,
+          ),
+      },
+      {
         path: 'trade-entry',
         component: TradeEntryDemoComponent,
       },

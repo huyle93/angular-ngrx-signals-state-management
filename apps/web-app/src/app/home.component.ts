@@ -31,6 +31,14 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
         <h3>Available Examples</h3>
         <div class="example-cards">
           <div class="card">
+            <h4>Adaptive FI (Web + Ionic)</h4>
+            <p>
+              Compare desktop web, mobile web and the Ionic mobile app in an
+              interactive preview.
+            </p>
+            <a href="/fi-preview" class="btn">View Example →</a>
+          </div>
+          <div class="card">
             <h4>Counter (Signals)</h4>
             <p>Basic signal-based state management with computed values</p>
             <a href="/counter" class="btn">View Example →</a>
