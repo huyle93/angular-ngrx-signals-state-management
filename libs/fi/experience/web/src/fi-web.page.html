@@ -28,8 +28,8 @@
     [error]="store.error()"
     (retry)="store.load(store.symbol())"
   />
-  @if (store.instrument(); as instrument) { @if (store.stats(); as stats) {
   <div class="fi-layout">
+    @if (store.instrument(); as instrument) { @if (store.stats(); as stats) {
     <div class="fi-stack">
       <app-instrument-overview
         class="fi-card"
@@ -48,11 +48,14 @@
         [stats]="stats"
       />
     </div>
+    }}
     <aside aria-label="Demo trade ticket">
-      <app-demo-trade [symbol]="instrument.symbol" [price]="stats.price" />
+      <app-demo-trade
+        [symbol]="store.symbol()"
+        [price]="store.stats()?.price ?? null"
+      />
     </aside>
   </div>
-  }}
   <footer>
     <p class="fi-note">
       PUBLIC LEARNING EXAMPLE · Synthetic data. No brokerage service.

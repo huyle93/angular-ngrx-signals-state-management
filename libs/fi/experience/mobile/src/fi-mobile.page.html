@@ -45,13 +45,12 @@
         [stats]="stats"
       />
     </div>
-    <app-demo-trade
-      class="mobile-trade"
-      [symbol]="instrument.symbol"
-      [price]="stats.price"
-      [disclosure]="true"
-    />
     }}
+    <app-mobile-trade
+      class="mobile-trade"
+      [symbol]="store.symbol()"
+      [price]="store.stats()?.price ?? null"
+    />
     <footer>
       <p class="fi-note">
         Synthetic data. No brokerage service.<br />Browser reference · no native

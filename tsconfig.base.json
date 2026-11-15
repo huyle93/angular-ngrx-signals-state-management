@@ -20,7 +20,10 @@
       "@fi/trading/*": ["libs/fi/trading/feature/src/*"],
       "@fi/web/*": ["libs/fi/experience/web/src/*"],
       "@fi/mobile/*": ["libs/fi/experience/mobile/src/*"],
-      "@fi/design/*": ["libs/fi/design/src/*"]
+      "@fi/design/*": ["libs/fi/design/src/*"],
+      "@fi/trading-util/*": ["libs/fi/trading/util/src/*"],
+      "@fi/trading-data-access/*": ["libs/fi/trading/data-access/src/*"],
+      "@fi/trading-ui/*": ["libs/fi/trading/ui/src/*"]
     },
     "esModuleInterop": true,
     "strict": true,

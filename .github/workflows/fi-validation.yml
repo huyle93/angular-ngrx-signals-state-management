@@ -18,5 +18,5 @@ jobs:
           node-version: '24.11.0'
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npx nx run-many -t build,lint,test --projects=web-app,mobile-reference,instrument-util,instrument-data-access,instrument-ui,trading-feature,fi-web,fi-mobile,demo-design --skip-nx-cache
+      - run: npx nx run-many -t build,lint,test --projects=web-app,mobile-reference,instrument-util,instrument-data-access,instrument-ui,trading-feature,trading-ui,trading-data-access,trading-util,fi-web,fi-mobile,demo-design --skip-nx-cache
       - run: npx nx run instrument-data-access:boundary-check

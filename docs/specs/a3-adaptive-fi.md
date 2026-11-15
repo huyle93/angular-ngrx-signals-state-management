@@ -22,3 +22,7 @@ See [decision](../decisions/ADR-A3-adaptive-fi.md), [validation](../validation/a
 ## Preview follow-up
 
 Provide `/fi-preview` in the existing demo shell with Desktop web, Mobile web and Ionic mobile choices. Use one live iframe: web size changes preserve the same document and session; Ionic loads the separately served mobile-reference app. Offer 320px/390px phone sizes, reload and standalone links, and instructions for a stopped mobile server. Extract only the demo viewport chrome for reuse by FI and legacy trade-entry. Preserve trade-entry interactions and its 390×750 outer geometry. No preview flags or frame CSS enter domain state/UI. Keep standalone FI routes available. The phone frame is a browser viewport aid, not device emulation.
+
+## Order-entry presentation follow-up
+
+Keep the desktop order-entry rail. On the Ionic browser app, Invest opens a full-page modal at phone and tablet widths. Reuse one controlled order-entry body and one local draft implementation through trading `feature`, `ui`, `data-access`, and `util` libraries. Close/Escape restore focus and preserve the raw amount; same-symbol retry retains it while invalidating the preview; instrument changes, route exit and reload reset it. Browser Back keeps normal route navigation. Verify theme inheritance after overlay relocation, background accessibility isolation, keyboard focus cycles, one modal/form/scroller, rapid interactions and route cleanup. No real order submission or native-device claim.

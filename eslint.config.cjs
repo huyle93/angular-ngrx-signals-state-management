@@ -83,7 +83,7 @@ module.exports = [
   {
     files: [
       'libs/fi/instrument/{util,data-access}/**/*.ts',
-      'libs/fi/trading/feature/src/trade-draft.store.ts',
+      'libs/fi/trading/{util,data-access}/**/*.ts',
     ],
     rules: {
       'no-restricted-imports': [
@@ -95,7 +95,7 @@ module.exports = [
     },
   },
   {
-    files: ['libs/fi/instrument/util/**/*.ts'],
+    files: ['libs/fi/{instrument,trading}/util/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -104,7 +104,7 @@ module.exports = [
     },
   },
   {
-    files: ['libs/fi/instrument/ui/**/*.ts'],
+    files: ['libs/fi/{instrument,trading}/ui/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -112,7 +112,8 @@ module.exports = [
           patterns: [
             '@angular/router',
             '@ionic/*',
-            '@fi/instrument-data-access/*',
+            '@capacitor/*',
+            '@fi/*-data-access/*',
             '@ngrx/*',
           ],
         },

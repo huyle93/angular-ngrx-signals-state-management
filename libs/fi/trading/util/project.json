@@ -1,0 +1,19 @@
+{
+  "name": "trading-util",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/fi/trading/util/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:fi", "type:util", "domain:trading"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/fi/trading/util/**/*.ts",
+          "libs/fi/trading/util/**/*.html"
+        ]
+      }
+    }
+  }
+}

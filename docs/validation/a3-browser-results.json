@@ -102,7 +102,7 @@
     "contentWidth": 320,
     "scrollWidth": 320,
     "bodyScroll": false,
-    "scrollOwner": true,
+    "scrollOwner": false,
     "charts": 1,
     "tickets": 1,
     "retryFocus": true,

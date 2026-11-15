@@ -94,19 +94,20 @@ async (page) => {
   );
   await iframe.scrollIntoViewIfNeeded();
   await child
-    .getByRole('button', { name: 'Invest · demo', exact: true })
+    .getByRole('button', { name: 'Invest (demo)', exact: true })
     .click();
   await child.getByLabel('Amount in USD').fill('42.');
   await child
-    .getByRole('button', { name: 'Close demo panel', exact: true })
+    .getByRole('button', { name: 'Close demo order entry', exact: true })
     .click();
   await iframe.scrollIntoViewIfNeeded();
   await child
-    .getByRole('button', { name: 'Invest · demo', exact: true })
+    .getByRole('button', { name: 'Invest (demo)', exact: true })
     .click();
+  await child.getByLabel('Amount in USD').click();
   assert(
     (await child.getByLabel('Amount in USD').inputValue()) === '42.',
-    'mobile disclosure draft lost',
+    'mobile modal draft lost',
   );
   await page.screenshot({
     path: 'output/playwright/a3/preview-ionic.png',
@@ -123,9 +124,16 @@ async (page) => {
   await navigated;
   await child.getByRole('heading', { name: 'Luma Orchard Labs' }).waitFor();
   assert(
-    !(await child.getByLabel('Amount in USD').isVisible()) &&
-      (await child.getByLabel('Amount in USD').inputValue()) === '',
-    'reload did not reset ionic disclosure/draft',
+    (await child.locator('app-order-entry').count()) === 0,
+    'reload retained modal contents',
+  );
+  await iframe.scrollIntoViewIfNeeded();
+  await child
+    .getByRole('button', { name: 'Invest (demo)', exact: true })
+    .click();
+  assert(
+    (await child.getByLabel('Amount in USD').inputValue()) === '',
+    'reload did not reset ionic draft',
   );
   await page.setViewportSize({ width: 320, height: 900 });
   assert(

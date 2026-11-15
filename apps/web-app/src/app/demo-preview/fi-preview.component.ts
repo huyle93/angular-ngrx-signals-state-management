@@ -71,7 +71,7 @@ type PreviewMode = 'desktop' | 'mobile-web' | 'ionic';
 
       <p class="mode-note" role="status">
         @if (mode() === 'ionic') {
-          Ionic mobile app · its own header, scroll region and Invest panel.
+          Ionic mobile app · its own header, scroll region and Invest modal.
         } @else {
           Responsive web app · switch desktop and mobile widths without
           resetting your chart or draft. Desktop uses the available width; widen

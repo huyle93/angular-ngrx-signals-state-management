@@ -139,6 +139,12 @@ async (page) => {
     await page.keyboard.press('Enter');
     await ready();
     check(
+      (await page
+        .getByRole('textbox', { name: 'Amount in USD' })
+        .inputValue()) === '125.50',
+      'Same-symbol web retry lost draft',
+    );
+    check(
       await page.evaluate(
         () =>
           document.activeElement?.getAttribute('aria-label') ===
@@ -225,7 +231,7 @@ async (page) => {
   );
   await page.getByText('Explore data states', { exact: true }).click();
   const invest = page.getByRole('button', {
-    name: 'Invest · demo',
+    name: 'Invest (demo)',
     exact: true,
   });
   await invest.focus();
@@ -234,23 +240,30 @@ async (page) => {
     () => document.activeElement?.id === 'trade-amount',
   );
   await page.getByRole('textbox', { name: 'Amount in USD' }).fill('42.');
-  await page.getByRole('button', { name: 'Close demo panel' }).focus();
+  await page.getByRole('button', { name: 'Close demo order entry' }).focus();
   await page.keyboard.press('Enter');
+  await page.waitForFunction(() =>
+    document.activeElement?.classList.contains('invest'),
+  );
   check(
     await invest.evaluate((el) => el === document.activeElement),
     'Focus did not return to Invest',
   );
   await page.keyboard.press('Enter');
+  await page.getByRole('textbox', { name: 'Amount in USD' }).waitFor();
+  await page.waitForFunction(
+    () => document.activeElement?.id === 'trade-amount',
+  );
   check(
     (await page
       .getByRole('textbox', { name: 'Amount in USD' })
       .inputValue()) === '42.',
-    'Disclosure lost draft',
+    'Modal lost draft',
   );
   await page.screenshot({ path: 'output/playwright/a3/mobile-panel-b.png' });
   await page.setViewportSize({ width: 320, height: 900 });
   const mobile = await page.evaluate(() => {
-    const content = document.querySelector('ion-content');
+    const content = document.querySelector('ion-modal ion-content');
     const scroll = content.shadowRoot.querySelector('.inner-scroll');
     return {
       width: innerWidth,
@@ -260,14 +273,13 @@ async (page) => {
       bodyScroll: document.documentElement.scrollHeight > innerHeight,
       scrollOwner: scroll.scrollHeight > scroll.clientHeight,
       charts: document.querySelectorAll('app-instrument-chart').length,
-      tickets: document.querySelectorAll('app-demo-trade').length,
+      tickets: document.querySelectorAll('app-order-entry').length,
     };
   });
   check(
     mobile.documentWidth === 320 &&
       mobile.scrollWidth === mobile.contentWidth &&
       !mobile.bodyScroll &&
-      mobile.scrollOwner &&
       mobile.charts === 1 &&
       mobile.tickets === 1,
     'Mobile scroll/overflow: ' + JSON.stringify(mobile),
@@ -280,10 +292,15 @@ async (page) => {
     focusReturn: true,
     draftContinuity: true,
   });
-  await page.getByRole('button', { name: 'Close demo panel' }).click();
+  await page.getByRole('button', { name: 'Close demo order entry' }).click();
+  await page.waitForFunction(
+    () => document.querySelectorAll('app-order-entry').length === 0,
+  );
   await page.getByLabel('Demo appearance').selectOption('a');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('ion-content').evaluate((el) => el.scrollToTop(0));
+  await page
+    .locator('app-fi-mobile > ion-content')
+    .evaluate((el) => el.scrollToTop(0));
   await page.screenshot({ path: 'output/playwright/a3/mobile-a.png' });
   await page.getByLabel('Demo appearance').selectOption('b');
   await page.waitForFunction(

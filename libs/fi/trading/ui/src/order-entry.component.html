@@ -1,0 +1,51 @@
+<div class="eyebrow">Practice space</div>
+<h2 id="trade-title">Your next idea</h2>
+<p class="muted">
+  Explore an amount for <strong>{{ view().symbol }}</strong
+  >. This stays in your browser until you leave.
+</p>
+<form (submit)="$event.preventDefault(); reviewRequested.emit()">
+  <label for="trade-amount">Amount in USD</label>
+  <div class="amount-field">
+    <span aria-hidden="true">$</span
+    ><input
+      #amount
+      id="trade-amount"
+      type="text"
+      inputmode="decimal"
+      autocomplete="off"
+      [value]="view().amount"
+      (input)="amountChange.emit(inputValue($event))"
+      aria-describedby="amount-help amount-error"
+      [attr.aria-invalid]="view().amount !== '' && view().value === null"
+    />
+  </div>
+  <p id="amount-help" class="hint">
+    Enter $1–$1,000,000, with up to two decimal places.
+  </p>
+  <p id="amount-error" class="error" aria-live="polite">
+    @if (view().amount && view().value === null) {
+      Enter a valid demo amount.
+    }
+  </p>
+  <dl>
+    <div>
+      <dt>Synthetic price</dt>
+      <dd>{{ view().price | currency }}</dd>
+    </div>
+    <div>
+      <dt>Illustrative shares</dt>
+      <dd>{{ view().shares | number: '1.0-4' }}</dd>
+    </div>
+  </dl>
+  <button class="primary" type="submit" [disabled]="view().value === null">
+    Preview demo amount
+  </button>
+</form>
+<p class="receipt" role="status">
+  @if (view().reviewed) {
+    Preview: {{ view().value | currency }} for {{ view().symbol }}. No order was
+    placed.
+  }
+</p>
+<p class="disclaimer">Learning only. No account, no order, no money moves.</p>

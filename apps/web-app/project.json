@@ -96,6 +96,13 @@
         "command": "node tools/run-a3-browser-smoke.cjs tools/a3-preview-smoke.js"
       },
       "cache": false
+    },
+    "modal-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/run-a3-browser-smoke.cjs tools/a3-modal-smoke.js"
+      },
+      "cache": false
     }
   }
 }

@@ -1,0 +1,57 @@
+:host {
+  display: block;
+}
+button {
+  font: inherit;
+  min-height: 48px;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+}
+.invest {
+  width: 100%;
+  border: 0;
+  background: var(--fi-action);
+  color: var(--fi-on-action);
+  font-weight: 600;
+}
+.invest:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.order-modal {
+  --width: 100%;
+  --height: 100%;
+  --max-width: 100%;
+  --max-height: 100%;
+  --border-radius: 0;
+  --background: var(--fi-bg);
+}
+ion-content {
+  --background: var(--fi-bg);
+}
+ion-toolbar {
+  --background: var(--fi-surface);
+  --color: var(--fi-text);
+}
+.order-toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+}
+h1 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+.close {
+  background: var(--fi-surface);
+  color: var(--fi-text);
+  border: 1px solid var(--fi-border);
+}
+.order-body {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}

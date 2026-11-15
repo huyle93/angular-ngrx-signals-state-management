@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [angular({ tsconfig: 'tsconfig.spec.json' }), nxViteTsPaths()],
   test: {
     globals: true,
+    server: { deps: { inline: ['@ionic/core', '@ionic/angular'] } },
     environment: 'jsdom',
     setupFiles: ['../../../../tools/test-setup.ts'],
     include: ['src/**/*.spec.ts'],

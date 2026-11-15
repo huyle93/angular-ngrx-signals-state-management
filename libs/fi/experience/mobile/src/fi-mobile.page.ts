@@ -1,5 +1,10 @@
 import { InstrumentStatusComponent } from '@fi/instrument-ui/instrument-status.component';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, map } from 'rxjs';
@@ -8,7 +13,7 @@ import { InstrumentOverviewComponent } from '@fi/instrument-ui/instrument-overvi
 import { InstrumentChartComponent } from '@fi/instrument-ui/instrument-chart.component';
 import { InstrumentDetailsComponent } from '@fi/instrument-ui/instrument-details.component';
 import { DemoScenariosComponent } from '@fi/instrument-ui/demo-scenarios.component';
-import { DemoTradeComponent } from '@fi/trading/demo-trade.component';
+import { MobileTradeComponent } from '@fi/trading/mobile-trade.component';
 import { ThemePickerComponent } from '@fi/design/theme-picker.component';
 import { IonHeader, IonToolbar, IonContent } from '@ionic/angular/standalone';
 
@@ -22,7 +27,7 @@ import { IonHeader, IonToolbar, IonContent } from '@ionic/angular/standalone';
     InstrumentChartComponent,
     InstrumentDetailsComponent,
     DemoScenariosComponent,
-    DemoTradeComponent,
+    MobileTradeComponent,
     ThemePickerComponent,
     IonHeader,
     IonToolbar,
@@ -36,6 +41,11 @@ import { IonHeader, IonToolbar, IonContent } from '@ionic/angular/standalone';
 })
 export class FiMobilePage {
   protected readonly store = inject(InstrumentStore);
+  private readonly trading = viewChild.required(MobileTradeComponent);
+  async canLeave() {
+    await this.trading().dismiss(false);
+    return true;
+  }
   constructor() {
     inject(ActivatedRoute)
       .paramMap.pipe(

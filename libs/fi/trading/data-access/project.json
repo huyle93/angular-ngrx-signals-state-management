@@ -1,0 +1,19 @@
+{
+  "name": "trading-data-access",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/fi/trading/data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["scope:fi", "type:data-access", "domain:trading"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/fi/trading/data-access/**/*.ts",
+          "libs/fi/trading/data-access/**/*.html"
+        ]
+      }
+    }
+  }
+}

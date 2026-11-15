@@ -34,6 +34,26 @@ async function main() {
       "export { IonContent } from '@ionic/angular/standalone';",
       'no-restricted-imports',
     ],
+    [
+      'libs/fi/trading/ui/src/state-probe.ts',
+      "export { TradeDraftStore } from '@fi/trading-data-access/trade-draft.store';",
+      '@nx/enforce-module-boundaries',
+    ],
+    [
+      'libs/fi/trading/data-access/src/presentation-probe.ts',
+      "export { DemoTradeComponent } from '@fi/trading/demo-trade.component';",
+      '@nx/enforce-module-boundaries',
+    ],
+    [
+      'libs/fi/trading/util/src/platform-probe.ts',
+      "export { IonModal } from '@ionic/angular/standalone';",
+      'no-restricted-imports',
+    ],
+    [
+      'libs/fi/trading/util/src/framework-probe.ts',
+      "export { signal } from '@angular/core';",
+      'no-restricted-imports',
+    ],
   ];
   for (const [filePath, code, expectedRule, expectedMessage] of probes) {
     const [result] = await eslint.lintText(code, { filePath });
