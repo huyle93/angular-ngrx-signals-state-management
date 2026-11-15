@@ -49,12 +49,10 @@ async (page) => {
       .getAttribute('aria-pressed')) === 'true',
     'range lost',
   );
-  const mobile = await child
-    .locator('body')
-    .evaluate(() => ({
-      width: innerWidth,
-      scroll: document.documentElement.scrollWidth,
-    }));
+  const mobile = await child.locator('body').evaluate(() => ({
+    width: innerWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
   assert(
     mobile.width === 320 && mobile.scroll === 320,
     'wrong mobile web viewport / overflow',
@@ -144,15 +142,27 @@ async (page) => {
     .waitFor();
   const legacy = await page
     .locator('app-preview-frame .viewport')
-    .evaluate((el) => ({
-      width: el.getBoundingClientRect().width,
-      height: el.getBoundingClientRect().height,
-      transform: getComputedStyle(el).transform,
-    }));
+    .evaluate((el) => {
+      const frame = el.getBoundingClientRect();
+      const footer = el
+        .querySelector('app-footer-trade-entry-stack')
+        .getBoundingClientRect();
+      return {
+        width: frame.width,
+        height: frame.height,
+        transform: getComputedStyle(el).transform,
+        footerContained:
+          footer.left >= frame.left &&
+          footer.right <= frame.right &&
+          footer.top >= frame.top &&
+          footer.bottom <= frame.bottom,
+      };
+    });
   assert(
     legacy.width === 390 && legacy.height === 750,
     'legacy frame changed geometry',
   );
+  assert(legacy.footerContained, 'legacy fixed footer escaped the frame');
   assert(errors.length === 0, 'runtime errors ' + errors.join(','));
   return {
     webStateContinuity: true,

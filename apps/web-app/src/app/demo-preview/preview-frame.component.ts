@@ -58,6 +58,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class PreviewFrameComponent {
   readonly phone = input(true);
+  // Phone dimensions describe the content viewport, excluding its 8px border.
+  // Desktop width fills the available stage; height includes its 1px border.
   readonly width = input(390);
   readonly height = input(750);
 }

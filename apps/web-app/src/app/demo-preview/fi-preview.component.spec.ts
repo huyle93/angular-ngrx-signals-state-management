@@ -9,6 +9,9 @@ describe('FI preview harness', () => {
     const frame = root.querySelector('iframe');
     if (!frame) throw new Error('Missing preview iframe');
     const originalUrl = frame.src;
+    // Assigning the SAME URL reloads a real iframe. URL equality alone cannot
+    // prove continuity; observe assignments after the initial render too.
+    const srcWrites = vi.spyOn(frame, 'src', 'set');
     const button = (label: string) => {
       const match = [...root.querySelectorAll('button')].find(
         (el) => el.textContent?.trim() === label,
@@ -29,6 +32,7 @@ describe('FI preview harness', () => {
     button('Desktop web');
     expect(root.querySelector('iframe')).toBe(frame);
     expect(frame.src).toBe(originalUrl);
+    expect(srcWrites).not.toHaveBeenCalled();
     expect(root.querySelectorAll('iframe')).toHaveLength(1);
     button('Ionic mobile');
     expect(new URL(frame.src).port).toBe('4300');

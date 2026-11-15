@@ -12,7 +12,8 @@
   "legacy": {
     "width": 390,
     "height": 750,
-    "transform": "matrix(1, 0, 0, 1, 0, 0)"
+    "transform": "matrix(1, 0, 0, 1, 0, 0)",
+    "footerContained": true
   },
   "outer320NoOverflow": true,
   "errors": []

@@ -60,8 +60,12 @@ type PreviewMode = 'desktop' | 'mobile-web' | 'ionic';
         <button type="button" (click)="revision.update(nextRevision)">
           Reload preview
         </button>
-        <a [href]="standaloneUrl()" target="_blank" rel="noopener"
-          >Open standalone ↗</a
+        <a
+          [href]="standaloneUrl()"
+          target="_blank"
+          rel="noopener"
+          aria-label="Open LUMA standalone (opens in a new tab)"
+          >Open LUMA standalone ↗</a
         >
       </div>
 
@@ -70,7 +74,8 @@ type PreviewMode = 'desktop' | 'mobile-web' | 'ionic';
           Ionic mobile app · its own header, scroll region and Invest panel.
         } @else {
           Responsive web app · switch desktop and mobile widths without
-          resetting your chart or draft.
+          resetting your chart or draft. Desktop uses the available width; widen
+          the browser to see two columns.
         }
       </p>
       @if (mode() === 'ionic') {
