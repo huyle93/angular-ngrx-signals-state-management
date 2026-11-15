@@ -3,10 +3,19 @@
   class="invest"
   type="button"
   [disabled]="!draft.view() || active()"
+  [attr.aria-describedby]="!draft.view() ? 'trade-availability' : null"
   (click)="open()"
 >
   Invest (demo)
 </button>
+@if (!draft.view()) {
+  <p id="trade-availability" class="availability">
+    A synthetic price is needed to preview an amount.
+  </p>
+}
+@if (openError()) {
+  <p role="status">Unable to open demo order entry. Try Invest again.</p>
+}
 <!-- Ionic moves this element under ion-app. Keep its theme and sizing on the overlay itself. -->
 <ion-modal
   class="fi-theme order-modal"

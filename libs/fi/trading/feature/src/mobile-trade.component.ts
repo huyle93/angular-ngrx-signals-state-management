@@ -36,6 +36,7 @@ export class MobileTradeComponent {
   readonly price = input.required<number | null>();
   protected readonly draft = inject(TradeDraftStore);
   protected readonly active = signal(false);
+  protected readonly openError = signal(false);
   private readonly modal = viewChild.required(IonModal);
   private readonly modalElement = viewChild.required<
     IonModal,
@@ -70,10 +71,19 @@ export class MobileTradeComponent {
     // Set the latch synchronously: repeated taps cannot queue another overlay.
     if (this.destroyed.destroyed || this.active() || !this.draft.view()) return;
     this.restoreFocus = true;
+    this.openError.set(false);
     this.active.set(true);
     this.presenting = this.modal().present();
     try {
       await this.presenting;
+    } catch {
+      // Contain a failed presentation so the trigger and route guard can recover.
+      try {
+        await this.dismiss(false);
+      } finally {
+        this.active.set(false);
+        this.openError.set(true);
+      }
     } finally {
       this.presenting = undefined;
     }
@@ -86,7 +96,7 @@ export class MobileTradeComponent {
     if (!this.active()) return Promise.resolve();
     const modal = this.modal();
     this.closing = (async () => {
-      await this.presenting;
+      await this.presenting?.catch(() => undefined);
       await modal.dismiss();
     })().finally(() => {
       this.closing = undefined;

@@ -1,5 +1,6 @@
 // Browser evidence, executed by the pinned Playwright CLI through Nx.
 async (page) => {
+  page.setDefaultTimeout(10000);
   const results = [];
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -196,7 +197,9 @@ async (page) => {
     el.click();
   });
   await amount().waitFor();
-  await page.waitForFunction(() => document.activeElement?.id === 'trade-amount');
+  await page.waitForFunction(
+    () => document.activeElement?.id === 'trade-amount',
+  );
   check(
     (await page.locator('ion-modal.show-modal').count()) === 1,
     'Duplicate overlay',
@@ -213,21 +216,25 @@ async (page) => {
     .waitFor();
   // A componentless test destination exercises the actual app's canDeactivate guard.
   // Use Angular's dev-only debug surface; no test route or debug hook ships in the app.
-  await open();
-  await page.evaluate(async () => {
+  await page.evaluate(() => {
     const link = document.querySelector('a[routerlink]');
-    const directive = window.ng.getDirectives(link).find((d) => d.router);
-    const router = directive.router;
+    const router = window.ng.getDirectives(link).find((d) => d.router).router;
     router.resetConfig([
       { path: 'modal-exit-check', children: [] },
       ...router.config,
     ]);
+  });
+  await invest().evaluate((el) => el.click());
+  await page.keyboard.press('Escape');
+  await page.evaluate(async () => {
+    const link = document.querySelector('a[routerlink]');
+    const router = window.ng.getDirectives(link).find((d) => d.router).router;
     await router.navigateByUrl('/modal-exit-check');
   });
   await clean();
   check(
     (await page.locator('ion-modal').count()) === 0,
-    'Teleported modal survived route exit',
+    'Teleported modal survived Escape/route-exit race',
   );
   await page.goBack();
   await page
@@ -246,6 +253,7 @@ async (page) => {
     rapidTaps: true,
     presentationRace: true,
     routeExitCleanup: true,
+    escapeDuringPresentationThenRouteExit: true,
   });
   check(errors.length === 0, 'Runtime errors: ' + errors.join(';'));
   results.push({ kind: 'runtime-errors', errors });

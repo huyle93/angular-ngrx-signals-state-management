@@ -296,6 +296,25 @@ async (page) => {
   await page.waitForFunction(
     () => document.querySelectorAll('app-order-entry').length === 0,
   );
+  const pageScroll = await page
+    .locator('app-fi-mobile > ion-content')
+    .evaluate(async (el) => {
+      const scroll = await el.getScrollElement();
+      return {
+        scrollOwner: scroll.scrollHeight > scroll.clientHeight,
+        bodyScroll: document.documentElement.scrollHeight > innerHeight,
+        scrollWidth: scroll.scrollWidth,
+        clientWidth: scroll.clientWidth,
+      };
+    });
+  check(
+    pageScroll.scrollOwner &&
+      !pageScroll.bodyScroll &&
+      pageScroll.scrollWidth === pageScroll.clientWidth,
+    'Underlying Ionic page lost its scroll owner: ' +
+      JSON.stringify(pageScroll),
+  );
+  results.push({ kind: 'mobile-page-after-dismiss', ...pageScroll });
   await page.getByLabel('Demo appearance').selectOption('a');
   await page.setViewportSize({ width: 390, height: 844 });
   await page

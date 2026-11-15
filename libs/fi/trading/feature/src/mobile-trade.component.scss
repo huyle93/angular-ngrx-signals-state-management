@@ -1,6 +1,10 @@
 :host {
   display: block;
 }
+.availability {
+  color: var(--fi-muted);
+  font-size: 0.85rem;
+}
 button {
   font: inherit;
   min-height: 48px;

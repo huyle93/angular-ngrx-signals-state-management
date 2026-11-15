@@ -111,6 +111,13 @@
     "draftContinuity": true
   },
   {
+    "kind": "mobile-page-after-dismiss",
+    "scrollOwner": true,
+    "bodyScroll": false,
+    "scrollWidth": 320,
+    "clientWidth": 320
+  },
+  {
     "kind": "runtime-errors",
     "errors": []
   }

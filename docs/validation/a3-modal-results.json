@@ -76,7 +76,8 @@
     "browserBack": true,
     "rapidTaps": true,
     "presentationRace": true,
-    "routeExitCleanup": true
+    "routeExitCleanup": true,
+    "escapeDuringPresentationThenRouteExit": true
   },
   {
     "kind": "runtime-errors",

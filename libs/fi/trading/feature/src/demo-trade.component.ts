@@ -18,13 +18,13 @@ import { OrderEntryComponent } from '@fi/trading-ui/order-entry.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (draft.view(); as view) {
-      <section class="ticket" aria-labelledby="trade-title">
+      <aside class="ticket" aria-label="Demo trade ticket">
         <app-order-entry
           [view]="view"
           (amountChange)="draft.updateAmount($event)"
           (reviewRequested)="draft.review()"
         />
-      </section>
+      </aside>
     }
   `,
   styles: [

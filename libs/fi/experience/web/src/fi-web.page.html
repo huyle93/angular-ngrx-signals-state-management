@@ -49,12 +49,10 @@
       />
     </div>
     }}
-    <aside aria-label="Demo trade ticket">
-      <app-demo-trade
-        [symbol]="store.symbol()"
-        [price]="store.stats()?.price ?? null"
-      />
-    </aside>
+    <app-demo-trade
+      [symbol]="store.symbol()"
+      [price]="store.stats()?.price ?? null"
+    />
   </div>
   <footer>
     <p class="fi-note">

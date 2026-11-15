@@ -1,0 +1,54 @@
+{
+  "consecutivePasses": 3,
+  "attempts": 3,
+  "runs": [
+    {
+      "run": 1,
+      "passed": true,
+      "runtimeErrors": [],
+      "lifecycle": {
+        "kind": "lifecycle",
+        "sameSymbolRecovery": true,
+        "previewInvalidated": true,
+        "symbolReset": true,
+        "browserBack": true,
+        "rapidTaps": true,
+        "presentationRace": true,
+        "routeExitCleanup": true,
+        "escapeDuringPresentationThenRouteExit": true
+      }
+    },
+    {
+      "run": 2,
+      "passed": true,
+      "runtimeErrors": [],
+      "lifecycle": {
+        "kind": "lifecycle",
+        "sameSymbolRecovery": true,
+        "previewInvalidated": true,
+        "symbolReset": true,
+        "browserBack": true,
+        "rapidTaps": true,
+        "presentationRace": true,
+        "routeExitCleanup": true,
+        "escapeDuringPresentationThenRouteExit": true
+      }
+    },
+    {
+      "run": 3,
+      "passed": true,
+      "runtimeErrors": [],
+      "lifecycle": {
+        "kind": "lifecycle",
+        "sameSymbolRecovery": true,
+        "previewInvalidated": true,
+        "symbolReset": true,
+        "browserBack": true,
+        "rapidTaps": true,
+        "presentationRace": true,
+        "routeExitCleanup": true,
+        "escapeDuringPresentationThenRouteExit": true
+      }
+    }
+  ]
+}
