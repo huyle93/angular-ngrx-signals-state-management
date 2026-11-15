@@ -4,6 +4,22 @@ async function main() {
   const eslint = new ESLint({ overrideConfigFile: 'eslint.config.cjs' });
   const probes = [
     [
+      'libs/fi/trading/feature/src/forbidden-probe.ts',
+      "export { InstrumentStore } from '@fi/instrument-data-access/instrument.store';",
+      '@nx/enforce-module-boundaries',
+      'domain:trading',
+    ],
+    [
+      'libs/fi/instrument/ui/src/domain-probe.ts',
+      "export { DemoTradeComponent } from '@fi/trading/demo-trade.component';",
+      '@nx/enforce-module-boundaries',
+    ],
+    [
+      'libs/fi/instrument/ui/src/state-probe.ts',
+      "export { signalStore } from '@ngrx/signals';",
+      'no-restricted-imports',
+    ],
+    [
       'libs/fi/instrument/data-access/src/forbidden-probe.ts',
       "export { DemoTradeComponent } from '@fi/trading/demo-trade.component';",
       '@nx/enforce-module-boundaries',
@@ -19,11 +35,14 @@ async function main() {
       'no-restricted-imports',
     ],
   ];
-  for (const [filePath, code, expectedRule] of probes) {
+  for (const [filePath, code, expectedRule, expectedMessage] of probes) {
     const [result] = await eslint.lintText(code, { filePath });
     if (
       !result.messages.some(
-        (message) => message.ruleId === expectedRule && message.severity === 2,
+        (message) =>
+          message.ruleId === expectedRule &&
+          message.severity === 2 &&
+          (!expectedMessage || message.message.includes(expectedMessage)),
       )
     ) {
       throw new Error(

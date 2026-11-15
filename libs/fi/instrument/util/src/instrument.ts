@@ -1,5 +1,6 @@
 export type ChartRange = '1M' | '3M' | '1Y';
 export type DemoScenario = 'ready' | 'slow' | 'empty' | 'error';
+export type InstrumentStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 export interface PricePoint {
   readonly date: string;
   readonly price: number;
@@ -20,7 +21,12 @@ export function seriesFor(
 }
 export function statistics(instrument: Instrument) {
   const prices = instrument.history.map((point) => point.price);
-  const price = prices.at(-1) ?? 0;
+  if (
+    prices.length === 0 ||
+    prices.some((price) => !Number.isFinite(price) || price <= 0)
+  )
+    return null;
+  const price = prices[prices.length - 1];
   const previous = prices.at(-2) ?? price;
   return {
     price,

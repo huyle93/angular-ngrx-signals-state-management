@@ -70,6 +70,7 @@
     "themeContinuity": true,
     "preview": true,
     "emptyErrorRetry": true,
+    "retryFocus": true,
     "staleCancellation": true,
     "backReload": true,
     "unknownSymbol": true
@@ -104,6 +105,7 @@
     "scrollOwner": true,
     "charts": 1,
     "tickets": 1,
+    "retryFocus": true,
     "keyboardOpen": true,
     "focusReturn": true,
     "draftContinuity": true

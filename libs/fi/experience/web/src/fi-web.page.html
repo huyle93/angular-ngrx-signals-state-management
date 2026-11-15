@@ -4,7 +4,7 @@
     <small>an investing sandbox</small></a
   ><app-theme-picker />
 </header>
-<div class="workspace">
+<main class="workspace">
   <div class="page-top">
     <div>
       <p class="eyebrow">Discover / Instrument detail</p>
@@ -22,28 +22,13 @@
       >
     </nav>
   </div>
-  @switch (store.status()) { @case ('loading') {
-  <div class="fi-status" role="status">Loading synthetic instrument…</div>
-  } @case ('empty') {
-  <div class="fi-status" role="status">
-    <h1>No instrument data</h1>
-    <p>
-      No synthetic values are available for {{ store.symbol() }}. Choose LUMA or
-      TIDE, or try again.
-    </p>
-    <button type="button" (click)="store.load(store.symbol())">
-      Try again
-    </button>
-  </div>
-  } @case ('error') {
-  <div class="fi-status" role="alert">
-    <h1>Unable to load this idea</h1>
-    <p>{{ store.error() }}</p>
-    <button type="button" (click)="store.load(store.symbol())">
-      Try again
-    </button>
-  </div>
-  } } @if (store.instrument(); as instrument) { @if (store.stats(); as stats) {
+  <app-instrument-status
+    [status]="store.status()"
+    [symbol]="store.symbol()"
+    [error]="store.error()"
+    (retry)="store.load(store.symbol())"
+  />
+  @if (store.instrument(); as instrument) { @if (store.stats(); as stats) {
   <div class="fi-layout">
     <div class="fi-stack">
       <app-instrument-overview
@@ -77,4 +62,4 @@
       >Back to all demos</a
     >
   </footer>
-</div>
+</main>

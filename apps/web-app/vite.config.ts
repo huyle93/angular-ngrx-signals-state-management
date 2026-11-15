@@ -6,13 +6,11 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 export default defineConfig({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps-web-app',
-  
-  plugins: [
-    angular(),
-    nxViteTsPaths(),
-  ],
+
+  plugins: [angular(), nxViteTsPaths()],
 
   test: {
+    server: { deps: { inline: ['@ionic/core', '@ionic/angular'] } },
     globals: true,
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],

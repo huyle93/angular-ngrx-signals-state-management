@@ -1,4 +1,12 @@
 const nx = require('@nx/eslint-plugin');
+const domainRestrictions = [
+  '@ionic/*',
+  '@capacitor/*',
+  '@angular/router',
+  '@fi/*-ui/*',
+  '@fi/web/*',
+  '@fi/mobile/*',
+];
 
 module.exports = [
   {
@@ -81,14 +89,7 @@ module.exports = [
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            '@ionic/*',
-            '@capacitor/*',
-            '@angular/router',
-            '@fi/*-ui/*',
-            '@fi/web/*',
-            '@fi/mobile/*',
-          ],
+          patterns: domainRestrictions,
         },
       ],
     },
@@ -98,7 +99,7 @@ module.exports = [
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: ['@angular/*', '@ionic/*', '@capacitor/*', '@ngrx/*'] },
+        { patterns: [...domainRestrictions, '@angular/*', '@ngrx/*'] },
       ],
     },
   },
@@ -112,6 +113,7 @@ module.exports = [
             '@angular/router',
             '@ionic/*',
             '@fi/instrument-data-access/*',
+            '@ngrx/*',
           ],
         },
       ],

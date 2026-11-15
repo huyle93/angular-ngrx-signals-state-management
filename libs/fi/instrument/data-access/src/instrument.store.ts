@@ -10,6 +10,7 @@ import {
   ChartRange,
   DemoScenario,
   Instrument,
+  InstrumentStatus,
   seriesFor,
   statistics,
 } from '@fi/instrument-util/instrument';
@@ -18,7 +19,7 @@ import { InstrumentRepository } from './instrument.repository';
 interface InstrumentState {
   symbol: string;
   instrument: Instrument | null;
-  status: 'idle' | 'loading' | 'ready' | 'empty' | 'error';
+  status: InstrumentStatus;
   range: ChartRange;
   error: string;
 }
@@ -71,9 +72,11 @@ export const InstrumentStore = signalStore(
               request.signal,
             );
             if (active !== request || request.signal.aborted) return;
+            const usable =
+              instrument && statistics(instrument) ? instrument : null;
             patchState(store, {
-              instrument,
-              status: instrument ? 'ready' : 'empty',
+              instrument: usable,
+              status: usable ? 'ready' : 'empty',
             });
           } catch {
             if (active !== request || request.signal.aborted) return;

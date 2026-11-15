@@ -18,7 +18,7 @@ Web uses a CSS query container with one column by default and `minmax(0,1fr) min
 
 One bootstrap with distinct routes would be simpler to run and test. It can deliver the same responsive web layout. Two entrypoints earn their place here as a teaching comparison of shell/scroll ownership and independent route composition, at the cost of another build, serve target and browser journey. This POC does **not** demonstrate independent native releases or reduced operational cost. If those differences are not useful to a future consumer, consolidate entrypoints while retaining the domain boundaries. A platform/brand source fork is unnecessary.
 
-Existing ticker/trade-entry components remain intact apart from a lint-required output rename. Their animation and fixed phone-frame interaction are not needed by this portable slice; extracting them would increase regression scope without serving a shared contract.
+Existing ticker/trade-entry components remain intact apart from a lint-required output rename. The web entrypoint restores document scrolling on all web routes, correcting Ionic global body clipping; the legacy trade-entry phone frame retains its own content scroller. Legacy Invest → Buy interaction was checked after this change. Their animation and fixed phone-frame interaction are not needed by this portable slice; extracting them would increase regression scope without serving a shared contract.
 
 ## Pressure test
 
@@ -33,3 +33,7 @@ Existing ticker/trade-entry components remain intact apart from a lint-required 
 ## Remaining decision
 
 Recommend **adjust/evaluate**, not production adoption: the source boundary is enforceable and the bounded browser journeys can be checked, but the extra bootstrap cost is justified only if the distinct shell composition remains useful. Independent review and Huy's acceptance decide whether this is a reference worth keeping.
+
+The root router now selects sibling FI and legacy demo-shell routes, avoiding a URL-prefix switch and the transient legacy header on FI deep links. The two compositions share a presentational status component with a persistent live paragraph. Retry focuses its persistent visible region before the button disappears; focus remains at that meaningful point through recovery, before the loaded instrument content. Wrapper tests exercise route changes, duplicate suppression and retry separately in both runtimes.
+
+The trade capability intentionally accepts changing symbol inputs and resets its own draft; the present wrappers also destroy unavailable content. Its input contract is tested even though today's route transition destroys the instance. Exactly one ticket is allowed in each composition; its fixed DOM IDs rely on that bounded contract. General multi-ticket rendering is out of scope. Focus on opening the disclosure uses Angular's `afterNextRender`, not a timer.

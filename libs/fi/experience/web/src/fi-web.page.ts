@@ -1,3 +1,4 @@
+import { InstrumentStatusComponent } from '@fi/instrument-ui/instrument-status.component';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -14,6 +15,7 @@ import { ThemePickerComponent } from '@fi/design/theme-picker.component';
   selector: 'app-fi-web',
   standalone: true,
   imports: [
+    InstrumentStatusComponent,
     RouterLink,
     InstrumentOverviewComponent,
     InstrumentChartComponent,

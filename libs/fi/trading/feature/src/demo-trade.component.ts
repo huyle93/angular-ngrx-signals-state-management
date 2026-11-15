@@ -1,10 +1,12 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
   ElementRef,
   inject,
+  Injector,
   input,
   signal,
   untracked,
@@ -236,6 +238,7 @@ export class DemoTradeComponent {
   );
   private readonly invest = viewChild<ElementRef<HTMLButtonElement>>('invest');
   private readonly amount = viewChild<ElementRef<HTMLInputElement>>('amount');
+  private readonly injector = inject(Injector);
   constructor() {
     effect(() => {
       const symbol = this.symbol();
@@ -245,7 +248,13 @@ export class DemoTradeComponent {
   }
   protected toggle() {
     this.open.update((value) => !value);
-    if (this.open()) setTimeout(() => this.amount()?.nativeElement.focus());
+    if (this.open())
+      afterNextRender(
+        () => {
+          if (this.open()) this.amount()?.nativeElement.focus();
+        },
+        { injector: this.injector },
+      );
   }
   protected close() {
     this.open.set(false);

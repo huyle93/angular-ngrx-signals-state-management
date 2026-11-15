@@ -1,3 +1,4 @@
+import { InstrumentStatusComponent } from '@fi/instrument-ui/instrument-status.component';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,6 +16,7 @@ import { IonHeader, IonToolbar, IonContent } from '@ionic/angular/standalone';
   selector: 'app-fi-mobile',
   standalone: true,
   imports: [
+    InstrumentStatusComponent,
     RouterLink,
     InstrumentOverviewComponent,
     InstrumentChartComponent,

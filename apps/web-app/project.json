@@ -73,6 +73,13 @@
         "staticFilePath": "dist/apps/web-app/browser",
         "spa": true
       }
+    },
+    "browser-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/run-a3-browser-smoke.cjs"
+      },
+      "cache": false
     }
   }
 }

@@ -135,8 +135,17 @@ async (page) => {
       (await page.locator('app-instrument-chart').count()) === 0,
       'Unavailable data rendered as current',
     );
-    await page.getByRole('button', { name: 'Try again' }).click();
+    await page.getByRole('button', { name: 'Try again' }).focus();
+    await page.keyboard.press('Enter');
     await ready();
+    check(
+      await page.evaluate(
+        () =>
+          document.activeElement?.getAttribute('aria-label') ===
+          'Instrument status',
+      ),
+      'Retry lost keyboard focus',
+    );
   }
   await page.getByRole('button', { name: 'Slow loading' }).click();
   await page.getByText('Loading synthetic instrument…').waitFor();
@@ -168,6 +177,7 @@ async (page) => {
     themeContinuity: true,
     preview: true,
     emptyErrorRetry: true,
+    retryFocus: true,
     staleCancellation: true,
     backReload: true,
     unknownSymbol: true,
@@ -197,6 +207,23 @@ async (page) => {
         .querySelector('button[aria-pressed=true]')
         ?.textContent.trim() === '3M',
   );
+  await page.getByText('Explore data states', { exact: true }).click();
+  await page.getByRole('button', { name: 'Error', exact: true }).click();
+  await page
+    .getByRole('heading', { name: 'Unable to load this idea' })
+    .waitFor();
+  await page.getByRole('button', { name: 'Try again' }).focus();
+  await page.keyboard.press('Enter');
+  await ready();
+  check(
+    await page.evaluate(
+      () =>
+        document.activeElement?.getAttribute('aria-label') ===
+        'Instrument status',
+    ),
+    'Mobile retry lost focus',
+  );
+  await page.getByText('Explore data states', { exact: true }).click();
   const invest = page.getByRole('button', {
     name: 'Invest · demo',
     exact: true,
@@ -248,6 +275,7 @@ async (page) => {
   results.push({
     kind: 'mobile',
     ...mobile,
+    retryFocus: true,
     keyboardOpen: true,
     focusReturn: true,
     draftContinuity: true,

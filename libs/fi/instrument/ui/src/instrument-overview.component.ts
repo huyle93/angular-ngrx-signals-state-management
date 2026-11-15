@@ -83,5 +83,5 @@ import { Instrument, statistics } from '@fi/instrument-util/instrument';
 })
 export class InstrumentOverviewComponent {
   readonly instrument = input.required<Instrument>();
-  readonly stats = input.required<ReturnType<typeof statistics>>();
+  readonly stats = input.required<NonNullable<ReturnType<typeof statistics>>>();
 }

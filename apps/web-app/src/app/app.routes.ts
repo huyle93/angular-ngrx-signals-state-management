@@ -1,3 +1,4 @@
+import { DemoShellComponent } from './demo-shell.component';
 import { Route } from '@angular/router';
 import { HomeComponent } from './home.component';
 import { CounterComponent } from './counter.component';
@@ -12,23 +13,29 @@ export const appRoutes: Route[] = [
   },
   {
     path: '',
-    component: HomeComponent,
-  },
-  {
-    path: 'counter',
-    component: CounterComponent,
-  },
-  {
-    path: 'todo',
-    component: TodoComponent,
-  },
-  {
-    path: 'ticker',
-    component: PriceTickerDemoComponent,
-  },
-  {
-    path: 'trade-entry',
-    component: TradeEntryDemoComponent,
+    component: DemoShellComponent,
+    children: [
+      {
+        path: '',
+        component: HomeComponent,
+      },
+      {
+        path: 'counter',
+        component: CounterComponent,
+      },
+      {
+        path: 'todo',
+        component: TodoComponent,
+      },
+      {
+        path: 'ticker',
+        component: PriceTickerDemoComponent,
+      },
+      {
+        path: 'trade-entry',
+        component: TradeEntryDemoComponent,
+      },
+    ],
   },
   {
     path: '**',

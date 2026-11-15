@@ -119,7 +119,10 @@ import { ChartRange, PricePoint } from '@fi/instrument-util/instrument';
       svg {
         display: block;
         width: 100%;
-        height: clamp(150px, 25vw, 250px);
+        height: auto;
+        aspect-ratio: 12 / 5;
+        min-height: 150px;
+        max-height: 250px;
         color: var(--fi-action);
         margin: 1.5rem 0 1rem;
       }

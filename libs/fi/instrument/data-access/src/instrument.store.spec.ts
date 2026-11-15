@@ -69,6 +69,24 @@ describe('Instrument state ownership', () => {
     expect(store.status()).toBe('empty');
     expect(store.range()).toBe('1M');
   });
+  it('treats empty or invalid history as unavailable instead of a zero price', async () => {
+    const repository = TestBed.inject(InstrumentRepository);
+    const store = TestBed.inject(InstrumentStore);
+    for (const history of [[], [{ date: '2026-10-31', price: 0 }]]) {
+      vi.spyOn(repository, 'load').mockResolvedValueOnce({
+        symbol: 'LUMA',
+        name: 'Synthetic',
+        category: 'Demo',
+        description: '',
+        research: '',
+        history,
+      });
+      await store.load('LUMA');
+      expect(store.status()).toBe('empty');
+      expect(store.instrument()).toBeNull();
+      expect(store.stats()).toBeNull();
+    }
+  });
   it('cancels pending work when the route-scoped owner is destroyed', async () => {
     const store = TestBed.inject(InstrumentStore);
     const load = store.load('LUMA', 'slow');

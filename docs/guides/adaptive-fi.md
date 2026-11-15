@@ -35,3 +35,13 @@ npx nx graph
 - `libs/fi/design`: small public token map and visual selector.
 
 Start with the [ADR](../decisions/ADR-A3-adaptive-fi.md), [project graph](../validation/a3-project-graph.md), and [validation](../validation/a3-adaptive-fi.md). The [task summary](../specs/a3-adaptive-fi.md) needs no private documents.
+
+## Reproduce browser evidence
+
+With both dev servers running on ports 4200 and 4300:
+
+```sh
+NX_NO_CLOUD=true npx nx run web-app:browser-smoke
+```
+
+This invokes the pinned Playwright CLI 0.1.24 through npm, opens a dedicated `a3` browser session and runs `tools/a3-browser-smoke.js`. Install its supported browser using `npx --package=@playwright/cli@0.1.24 playwright-cli install-browser` if requested by the CLI. It checks real UI interactions and emits JSON results; failures are propagated to Nx even when the CLI itself exits successfully. It refreshes the six screenshots under `output/playwright/a3/`; review those diffs before committing new evidence. This browser target is local/manual; the checked-in CI job runs build, lint, unit tests and negative boundary checks. Browser zoom and spoken screen-reader validation remain separate from the script.
