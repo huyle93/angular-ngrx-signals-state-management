@@ -38,4 +38,13 @@ pnpm nx graph                # Dependency visualization
 - `.github/copilot-instructions.md` - code generation rules
 - `.github/skills/` - agent task skills
 
+## Commit Hygiene
+
+No app/brand names, business-specific naming, or external-context content in any committed
+file, doc, or commit message. Enforcement: `.githooks/` pre-commit/commit-msg scan against
+the gitignored deny-list `external-context/forbidden-terms.pattern` (installed via the
+`prepare` npm script). If the hook blocks you, reword to neutral naming
+(e.g. `example app`, `mobile-app`); never use `--no-verify`. Never commit the deny-list
+itself — it contains the forbidden terms.
+
 <!-- nx configuration end-->

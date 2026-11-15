@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits whose message contains forbidden terms.
+# See .githooks/forbidden-term-scan.sh for the deny-list source and rules.
+exec sh "$(dirname "$0")/forbidden-term-scan.sh" --message "$1"

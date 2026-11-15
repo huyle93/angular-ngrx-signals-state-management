@@ -144,6 +144,25 @@ apps/web-app/
 ❌ Don't use Default change detection strategy
 ❌ Don't use barrel index files
 ❌ Don't mutate signals directly (use `.set()` or `.update()`)
+❌ Don't put app/brand names, business-specific naming, or external-context content in any committed file, doc, or commit message
+
+## Commit Hygiene and External Context
+
+This repository must contain no app/brand names or business-specific naming in code,
+docs, or commit messages. Enforcement is a local git hook:
+
+- `.githooks/pre-commit` and `.githooks/commit-msg` scan staged content and the
+  commit message against a **gitignored** deny-list: `external-context/forbidden-terms.pattern`
+  (one case-insensitive regex per line). The deny-list itself must never be committed,
+  because it contains the forbidden terms.
+- The deny-list lives in `external-context/`, which is gitignored for exactly this reason:
+  external app context stays on the contributor's machine.
+- `npm install` runs the `prepare` script, which sets `core.hooksPath` to `.githooks/`.
+  After cloning, run `npm install` (or `git config core.hooksPath .githooks`) once.
+- If the hook blocks a commit, reword the content/message to neutral naming
+  (for example `example app`, `mobile-app`). Never bypass with `--no-verify`.
+- Agents generating commits must self-check staged files and messages against the same
+  rule before committing, even when the hook is not installed.
 
 ## When to Use What
 
