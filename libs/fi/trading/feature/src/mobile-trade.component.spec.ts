@@ -88,31 +88,34 @@ describe('Mobile trading lifecycle coordination', () => {
     expect(element<HTMLInputElement>('input').value).toBe('42.');
     await fixture.componentInstance.dismiss(false);
   });
-  it('waits for dismissal cleanup before accepting a reopen after didDismiss', async () => {
-    const { fixture, present, dismiss, emit, open } = await setup();
-    await open();
-    const cleanup = deferred<boolean>();
-    dismiss.mockImplementation(() => {
-      emit('didDismiss');
-      return cleanup.promise;
-    });
-    const closing = fixture.componentInstance.dismiss(false);
-    await vi.waitFor(() => expect(dismiss).toHaveBeenCalledOnce());
-    fixture.detectChanges();
-    const reopening = fixture.componentInstance['open']();
-    await Promise.resolve();
-    expect(present).toHaveBeenCalledOnce();
-    cleanup.resolve(true);
-    await closing;
-    await reopening;
-    await fixture.whenStable();
-    expect(present).toHaveBeenCalledTimes(2);
-    dismiss.mockImplementation(async () => {
-      emit('didDismiss');
-      return true;
-    });
-    await fixture.componentInstance.dismiss(false);
-  });
+  it.each([true, false])(
+    'awaits cleanup and only reopens after a user close (restoreFocus=%s)',
+    async (restoreFocus) => {
+      const { fixture, present, dismiss, emit, open } = await setup();
+      await open();
+      const cleanup = deferred<boolean>();
+      dismiss.mockImplementation(() => {
+        emit('didDismiss');
+        return cleanup.promise;
+      });
+      const closing = fixture.componentInstance.dismiss(restoreFocus);
+      await vi.waitFor(() => expect(dismiss).toHaveBeenCalledOnce());
+      fixture.detectChanges();
+      const reopening = fixture.componentInstance['open']();
+      await Promise.resolve();
+      expect(present).toHaveBeenCalledOnce();
+      cleanup.resolve(true);
+      await closing;
+      await reopening;
+      await fixture.whenStable();
+      expect(present).toHaveBeenCalledTimes(restoreFocus ? 2 : 1);
+      dismiss.mockImplementation(async () => {
+        emit('didDismiss');
+        return true;
+      });
+      await fixture.componentInstance.dismiss(false);
+    },
+  );
   it('recovers the trigger and permits route cleanup when presentation rejects', async () => {
     const { fixture, present, dismiss, open, element } = await setup();
     present.mockRejectedValueOnce(new Error('presentation failed'));

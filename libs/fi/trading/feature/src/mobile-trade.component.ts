@@ -67,7 +67,11 @@ export class MobileTradeComponent {
   }
 
   protected async open() {
-    if (this.closing) await this.closing;
+    if (this.closing) {
+      await this.closing;
+      // Only a user close may queue a reopen; context/route exit cancels it.
+      if (!this.restoreFocus) return;
+    }
     // Set the latch synchronously: repeated taps cannot queue another overlay.
     if (this.destroyed.destroyed || this.active() || !this.draft.view()) return;
     this.restoreFocus = true;
@@ -79,7 +83,7 @@ export class MobileTradeComponent {
     } catch {
       // Contain a failed presentation so the trigger and route guard can recover.
       try {
-        await this.dismiss(false);
+        await this.dismiss();
       } finally {
         this.active.set(false);
         this.openError.set(true);

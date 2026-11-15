@@ -5,6 +5,9 @@
   color: var(--fi-muted);
   font-size: 0.85rem;
 }
+.open-status:empty {
+  margin: 0;
+}
 button {
   font: inherit;
   min-height: 48px;

@@ -13,9 +13,11 @@
     A synthetic price is needed to preview an amount.
   </p>
 }
-@if (openError()) {
-  <p role="status">Unable to open demo order entry. Try Invest again.</p>
-}
+<p class="open-status" role="status">
+  @if (openError()) {
+    Unable to open demo order entry. Try Invest again.
+  }
+</p>
 <!-- Ionic moves this element under ion-app. Keep its theme and sizing on the overlay itself. -->
 <ion-modal
   class="fi-theme order-modal"
