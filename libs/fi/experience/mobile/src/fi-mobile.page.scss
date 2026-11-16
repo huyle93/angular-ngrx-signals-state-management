@@ -1,3 +1,5 @@
+@use '../../../design/src/layout';
+
 :host {
   --background: var(--fi-bg);
 }
@@ -5,7 +7,7 @@ ion-content {
   --background: var(--fi-bg);
 }
 .mobile-toolbar {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem var(--fi-space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -22,20 +24,20 @@ ion-content {
   color: var(--fi-muted);
 }
 .mobile-content {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 1rem;
-  min-width: 0;
+  @include layout.page-container(
+    $max-inline-size: var(--fi-reading-width),
+    $gutter: var(--fi-space-4)
+  );
 }
 .page-top {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--fi-gap);
 }
 .page-top p {
   margin-top: 0;
 }
 .mobile-trade {
   display: block;
-  margin-top: 1.5rem;
+  margin-top: var(--fi-gap);
 }
 footer {
   padding: 1rem 0 2rem;

@@ -82,13 +82,13 @@ the owner's external app experiments.
 
 ## Agent Guidance
 
-| Need | Where |
-|---|---|
-| Commands, workspace structure | this file, `nx-workspace` skill |
-| Component / test code templates | `docs/guides/agent-coding-standards.md` |
-| Concepts, patterns, decisions | `docs/concepts/`, `docs/patterns/`, `docs/decisions/` |
-| Task skills | `.github/skills/` |
-| Commit rules | Commit Hygiene (below) and `.githooks/` |
+| Need                            | Where                                                 |
+| ------------------------------- | ----------------------------------------------------- |
+| Commands, workspace structure   | this file, `nx-workspace` skill                       |
+| Component / test code templates | `docs/guides/agent-coding-standards.md`               |
+| Concepts, patterns, decisions   | `docs/concepts/`, `docs/patterns/`, `docs/decisions/` |
+| Task skills                     | `.github/skills/`                                     |
+| Commit rules                    | Commit Hygiene (below) and `.githooks/`               |
 
 ## Commit Hygiene
 
@@ -103,6 +103,6 @@ itself — it contains the forbidden terms.
 
 Use npm and the checked-in package-lock. Read [the local task](docs/specs/a3-adaptive-fi.md), [ADR](docs/decisions/ADR-A3-adaptive-fi.md), and [run guide](docs/guides/adaptive-fi.md). No private source access is needed.
 
-`apps/mobile-reference` is an Ionic **browser** reference on port 4300; `web-app` remains the web entrypoint. `/fi/:symbol` resolves a different composition per app. `libs/fi/instrument` owns FI models/state/UI; `libs/fi/trading/{feature,ui,util,data-access}` separate presentation hosts, form UI, pure contracts and the host-scoped draft. Experience wrappers compose domains; domain projects must not import one another. `libs/fi/design` owns public appearance only. `eslint.config.cjs` is the canonical lint/boundary config. No viewport/theme flags in domain stores.
+`apps/mobile-reference` is an Ionic **browser** reference on port 4300; `web-app` remains the web entrypoint. `/fi/:symbol` resolves a different composition per app. `libs/fi/instrument` owns FI models/state/UI; `libs/fi/trading/{feature,ui,util,data-access}` separate presentation hosts, form UI, pure contracts and the host-scoped draft. Experience wrappers compose domains; domain projects must not import one another. `libs/fi/design` owns public visual foundations and reusable layout primitives only; experiences choose patterns and content-fit budgets. `eslint.config.cjs` is the canonical lint/boundary config. No viewport/theme flags in domain stores.
 
 Validate both builds, all affected lint/test targets, and `npx nx run instrument-data-access:boundary-check`; see the guide for the complete command. Record real results in `docs/validation/`. Keep synthetic data and original visuals only. No native, tenant-security, trading or production claim. A3 is an experiment pending human review, not permission to rename/publish/merge.

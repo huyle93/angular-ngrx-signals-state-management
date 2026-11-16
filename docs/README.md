@@ -40,6 +40,7 @@ Step-by-step tutorials and how-to guides:
 
 Architecture and state management patterns:
 
+- [Design-system layout ownership](patterns/design-system-layout-ownership.md): shared foundations, adaptive patterns, industry examples and app responsibilities
 - [Adaptive mobile and desktop experiences](patterns/adaptive-mobile-desktop-experiences.md): shared capabilities, modal/rail presentation, layout choices and lifecycle lessons
 - Local component state patterns
 - Shared state patterns (planned with NgRx Store)

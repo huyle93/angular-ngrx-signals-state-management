@@ -1,5 +1,7 @@
 # A3 validation — 2026-11-15
 
+Later layout work: [design-system layout validation](design-system-layout.md) records the shared primitives, corrected content-fit threshold and fresh browser checks on 2026-11-16. The entries below retain their original scope and dates.
+
 Implementation experiment; human adoption review remains pending. Base `main`: `69c84e5719de283c0658353b41e47efbd355b78a`, verified against the remote before edits. Branch: `feat/a3-adaptive-fi`. Review/CI are bound to the PR's final commit, not this document's existence.
 
 ## Baseline (before implementation)

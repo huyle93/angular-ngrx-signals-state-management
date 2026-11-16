@@ -1,3 +1,5 @@
+@use '../../../design/src/layout';
+
 :host {
   display: block;
 }
@@ -58,7 +60,8 @@ h1 {
   border: 1px solid var(--fi-border);
 }
 .order-body {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1.5rem;
+  @include layout.page-container(
+    $max-inline-size: var(--fi-form-width),
+    $gutter: var(--fi-gap)
+  );
 }

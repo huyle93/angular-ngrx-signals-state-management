@@ -35,6 +35,12 @@ An experience wrapper composes domains through explicit inputs and outputs. Inst
 
 The design principles are practical: single responsibility separates reasons to change; small contracts keep hosts replaceable; composition allows compatible pieces to be assembled differently. Share business decisions and compatible UI. Keep separate templates when forcing one template would introduce many unrelated platform branches. Introduce library boundaries for real consumers and responsibilities, rather than generating four empty projects for every domain.
 
+## Give the design system a layout role
+
+Your design system owns visual foundations and reusable layout behavior: gutters, width limits, spacing, containers and adaptive page patterns. The experience selects a pattern, supplies its content and owns workflow choices such as modal versus embedded presentation. Domain stores remain independent of layout.
+
+See [design-system layout ownership](design-system-layout-ownership.md) for industry examples, an ownership map and the demo’s shared Sass contract.
+
 ## Choose layout by the relationship between regions
 
 ### Why CSS Grid fits the web composition
@@ -57,11 +63,11 @@ Its row/column model also becomes useful if a workspace later needs aligned head
 
 ### A small Grid example
 
-This standalone sketch shows layout only. In a component application, keep the same region hosts mounted while changing columns.
+This layout-only sketch shows the same container and track contract used by the demo. The application generates its grid rules through the design library’s `content-with-aside` mixin; it keeps the same region hosts mounted while changing columns.
 
 ```html
 <div class="workspace">
-  <div class="detail-layout">
+  <div class="fi-layout">
     <section class="detail-main" aria-label="Instrument details">...</section>
     <aside class="order-entry" aria-label="Order entry">...</aside>
   </div>
@@ -70,22 +76,22 @@ This standalone sketch shows layout only. In a component application, keep the s
 
 ```css
 .workspace {
-  container-type: inline-size;
+  container: instrument-detail / inline-size;
 }
 
-.detail-layout {
+.fi-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
 }
 
-.detail-layout > * {
+.fi-layout > * {
   min-inline-size: 0;
 }
 
-@container (min-width: 57rem) {
-  .detail-layout {
+@container instrument-detail (min-width: 56.5rem) {
+  .fi-layout {
     grid-template-columns: minmax(0, 1fr) minmax(19rem, 21rem);
   }
 }
@@ -95,7 +101,7 @@ The parent establishes the [query container](https://www.w3.org/TR/css-contain-3
 
 `minmax(0, 1fr)` permits the flexible track to shrink below its automatic content-based minimum. `min-inline-size: 0` allows the children to shrink too. Descendants still need their own overflow handling: long identifiers may need wrapping, and charts must size themselves from their actual container. These rules do not make every overflowing descendant responsive automatically.
 
-The illustrative threshold budgets a 34rem main region, the rail’s 21rem maximum and a 1.5rem gap: 56.5rem, rounded to 57rem. Budgeting only for the 19rem rail minimum would overlook the space it can consume as it grows. These are teaching values; the runnable experiment uses a different threshold. Recalculate the fit for the actual typography, labels and controls. Keep the one-column fallback and test the supported browser/WebView matrix.
+The demo and this sketch budget a 34rem main region, the rail’s 21rem maximum and a 1.5rem gap: 56.5rem of container content width. Budgeting only for the 19rem rail minimum would overlook the space it can consume as it grows. The shared mixin derives that threshold from the experience’s region sizes and the design library’s gap, so the documentation and demo use the same budget. Recalculate the fit for the actual typography, labels and controls. Keep the one-column fallback and test the supported browser/WebView matrix.
 
 Keep detail content before the order form in source order. Grid placement does not change screen-reader or keyboard navigation order; avoid visually moving regions into a conflicting sequence. The [Grid accessibility guidance](https://www.w3.org/TR/css-grid-2/#order-accessibility) explains this distinction.
 
@@ -159,6 +165,7 @@ The pattern is portable; these optional links connect it to the runnable example
 
 - [Run guide and preview](../guides/adaptive-fi.md)
 - [Architecture decision and trade-offs](../decisions/ADR-A3-adaptive-fi.md)
+- [Shared layout primitives](../../libs/fi/design/src/layout.scss)
 - [Web composition and container sizing](../../libs/fi/experience/web/src/fi-web.page.scss)
 - [Mobile modal/session host](../../libs/fi/trading/feature/src/mobile-trade.component.ts)
 - [Shared controlled form](../../libs/fi/trading/ui/src/order-entry.component.ts)

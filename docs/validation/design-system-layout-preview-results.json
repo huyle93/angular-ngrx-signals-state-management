@@ -1,0 +1,20 @@
+{
+  "webStateContinuity": true,
+  "mobile": {
+    "width": 320,
+    "scroll": 320
+  },
+  "ionic": {
+    "width": 320,
+    "scrollOwner": true,
+    "bodyScroll": false
+  },
+  "legacy": {
+    "width": 390,
+    "height": 750,
+    "transform": "matrix(1, 0, 0, 1, 0, 0)",
+    "footerContained": true
+  },
+  "outer320NoOverflow": true,
+  "errors": []
+}

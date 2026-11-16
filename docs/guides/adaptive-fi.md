@@ -44,8 +44,10 @@ npx nx graph
 - `libs/fi/trading/data-access`: host-scoped ephemeral draft session; no network access.
 - `libs/fi/trading/ui`: controlled form body, with no store or Ionic dependency.
 - `libs/fi/trading/feature`: desktop rail and full-page mobile modal presentation/lifecycle.
-- `libs/fi/experience/{web,mobile}`: distinct assemblies, route adapters and layout.
-- `libs/fi/design`: small public token map and visual selector.
+- `libs/fi/experience/{web,mobile}`: distinct assemblies, route adapters and layout-pattern selection.
+- `libs/fi/design`: public visual tokens, shared container/adaptive-layout mixins and visual selector.
+
+Read [design-system layout ownership](../patterns/design-system-layout-ownership.md) for the boundary between shared layout rules and experience choices. The demo uses a 56.5rem content-fit threshold (34rem main + 21rem maximum aside + 1.5rem gap), derived by the shared Sass mixin. The browser smoke checks the threshold, a constrained container inside a wide viewport, and larger root text without remounting state owners.
 
 Start with the [ADR](../decisions/ADR-A3-adaptive-fi.md), [project graph](../validation/a3-project-graph.md), and [validation](../validation/a3-adaptive-fi.md). The [task summary](../specs/a3-adaptive-fi.md) needs no private documents.
 

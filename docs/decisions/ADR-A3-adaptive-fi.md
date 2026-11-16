@@ -12,7 +12,7 @@ Trading now has four projects: `util` owns pure amount validation and view contr
 
 The mobile composition uses `ion-app`, a standard Angular router outlet, `ion-header`, and one `ion-content`. This bounded reference does not need retained Ionic page stacks. It deliberately avoids claiming Ionic navigation caching/native lifecycle coverage. Invest opens a full-viewport inline `ion-modal`, with its own header and one content scroller. Dismissal destroys its inner form view but preserves the host-scoped draft. The modal owns focus; close/Escape return focus to Invest after Angular re-enables it.
 
-Web uses a CSS query container with one column by default and `minmax(0,1fr) minmax(19rem,21rem)` above 55rem of **content width**. The threshold allows a 34rem chart, 19rem ticket and 1.5rem gap. Flexbox handles local wrapping; sequential research and forms use normal flow. DOM and keyboard order stay main content → trading. There are no sticky overlays or duplicate breakpoint trees.
+Web uses a CSS query container with one column by default and `minmax(0,1fr) minmax(19rem,21rem)` at 56.5rem of **content width**. The threshold budgets a 34rem main region, the ticket’s 21rem maximum and a 1.5rem gap. The design library owns the `content-with-aside` mixin and shared container foundations; the web experience chooses the region sizes and named query container. The Ionic page and modal reuse the container primitive with reading/form width tokens, while their hosts retain scroll and interaction ownership. Flexbox handles local wrapping; sequential research and forms use normal flow. DOM and keyboard order stay main content → trading. There are no sticky overlays or duplicate breakpoint trees.
 
 ## Alternative and cost
 

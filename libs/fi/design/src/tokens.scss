@@ -1,3 +1,5 @@
+@use './layout';
+
 // Public-example semantic map. These are visual themes, never tenant identities.
 .fi-theme {
   --fi-bg: #f4f6f2;
@@ -10,9 +12,13 @@
   --fi-focus: #9b3b09;
   --fi-positive: #245e3f;
   --fi-error: #a12527;
-  --fi-gap: 1.5rem;
+  --fi-gap: #{layout.$region-gap};
   --fi-radius: 16px;
   --fi-page-width: 80rem;
+  --fi-reading-width: 48rem;
+  --fi-form-width: 40rem;
+  --fi-page-gutter: clamp(1rem, 4vw, 3rem);
+  --fi-space-4: 1rem;
   --ion-background-color: var(--fi-bg);
   --ion-text-color: var(--fi-text);
   --ion-toolbar-background: var(--fi-surface);

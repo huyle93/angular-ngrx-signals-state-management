@@ -1,0 +1,51 @@
+// Shared visual foundations. No routes, domain selectors or device detection.
+$region-gap: 1.5rem;
+
+// The maximum includes padding. This primitive does not own scrolling.
+@mixin page-container(
+  $max-inline-size: var(--fi-page-width),
+  $gutter: var(--fi-page-gutter)
+) {
+  box-sizing: border-box;
+  max-inline-size: $max-inline-size;
+  min-inline-size: 0;
+  margin-inline: auto;
+  padding: $gutter;
+}
+
+// Apply to a descendant of the named inline-size container. Keep two regions
+// in source order: main, then aside. Use compatible rem lengths for the budget.
+// Configure the gap here so the rendered gap and fit threshold stay together.
+@mixin content-with-aside(
+  $container,
+  $main-min,
+  $aside-min,
+  $aside-max,
+  $gap: $region-gap
+) {
+  @if $main-min <=
+    0rem or
+    $aside-min <=
+    0rem or
+    $aside-max <
+    $aside-min or
+    $gap <
+    0rem
+  {
+    @error 'Use positive region widths, an aside maximum >= its minimum, and a nonnegative gap.';
+  }
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: $gap;
+  align-items: start;
+
+  > * {
+    min-inline-size: 0;
+  }
+
+  // Budget the maximum aside width, not just its minimum.
+  @container #{$container} (min-width: #{$main-min + $aside-max + $gap}) {
+    grid-template-columns: minmax(0, 1fr) minmax($aside-min, $aside-max);
+  }
+}

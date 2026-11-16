@@ -27,38 +27,111 @@ async (page) => {
     window.a3Chart = document.querySelector('app-instrument-chart');
     window.a3Ticket = document.querySelector('app-demo-trade');
   });
-  for (const width of [1440, 768, 320, 1440]) {
-    await page.setViewportSize({ width, height: 1000 });
-    const value = await page.evaluate(() => ({
-      width: innerWidth,
-      scroll: document.documentElement.scrollWidth,
-      columns: getComputedStyle(document.querySelector('.fi-layout'))
-        .gridTemplateColumns,
-      chart: window.a3Chart === document.querySelector('app-instrument-chart'),
-      ticket: window.a3Ticket === document.querySelector('app-demo-trade'),
-      charts: document.querySelectorAll('app-instrument-chart').length,
-      tickets: document.querySelectorAll('app-demo-trade').length,
-      range: document
-        .querySelector('button[aria-pressed=true]')
-        .textContent.trim(),
-      amount: document.querySelector('#trade-amount').value,
-    }));
+  const layoutSnapshot = () =>
+    page.evaluate(() => {
+      const workspace = document.querySelector('.workspace');
+      const layout = document.querySelector('.fi-layout');
+      const workspaceCss = getComputedStyle(workspace);
+      const layoutCss = getComputedStyle(layout);
+      const contentWidth =
+        workspace.getBoundingClientRect().width -
+        parseFloat(workspaceCss.paddingLeft) -
+        parseFloat(workspaceCss.paddingRight);
+      return {
+        width: innerWidth,
+        scroll: document.documentElement.scrollWidth,
+        contentWidth,
+        rootSize: parseFloat(
+          getComputedStyle(document.documentElement).fontSize,
+        ),
+        tracks: layoutCss.gridTemplateColumns.split(' ').map(parseFloat),
+        gap: parseFloat(layoutCss.columnGap),
+        chart:
+          window.a3Chart === document.querySelector('app-instrument-chart'),
+        ticket: window.a3Ticket === document.querySelector('app-demo-trade'),
+        charts: document.querySelectorAll('app-instrument-chart').length,
+        tickets: document.querySelectorAll('app-demo-trade').length,
+        range: document
+          .querySelector('button[aria-pressed=true]')
+          .textContent.trim(),
+        amount: document.querySelector('#trade-amount').value,
+        sourceOrder: Boolean(
+          document
+            .querySelector('app-instrument-chart')
+            .compareDocumentPosition(document.querySelector('app-demo-trade')) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      };
+    });
+  const checkLayout = async (kind, expectedColumns) => {
+    const value = await layoutSnapshot();
     check(
-      value.scroll <= width &&
+      value.scroll <= value.width &&
         value.chart &&
         value.ticket &&
         value.charts === 1 &&
         value.tickets === 1 &&
+        value.sourceOrder &&
         value.range === '3M' &&
         value.amount === '125.',
-      'Resize continuity/overflow: ' + JSON.stringify(value),
+      'Layout continuity/overflow: ' + JSON.stringify(value),
     );
     check(
-      value.columns.split(' ').length === (width === 1440 ? 2 : 1),
-      'Unexpected grid tracks',
+      value.tracks.length === expectedColumns,
+      'Unexpected grid tracks: ' + JSON.stringify(value),
     );
-    results.push({ kind: 'resize', ...value });
+    if (expectedColumns === 2) {
+      check(
+        value.tracks[0] >= 34 * value.rootSize - 1 &&
+          value.tracks[1] >= 19 * value.rootSize - 1 &&
+          value.tracks[1] <= 21 * value.rootSize + 1 &&
+          Math.abs(value.gap - 1.5 * value.rootSize) < 1,
+        'Region budget violated: ' + JSON.stringify(value),
+      );
+    }
+    results.push({ kind, ...value });
+  };
+  for (const [width, columns] of [
+    [1440, 2],
+    [983, 2],
+    [982, 1],
+    [768, 1],
+    [320, 1],
+    [1440, 2],
+  ]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await checkLayout('resize', columns);
   }
+  // Hold the outer viewport wide; only the allocated content width changes.
+  // This catches accidentally using a viewport query or the wrong container.
+  for (const [contentWidth, columns] of [
+    [903, 1],
+    [904, 2],
+  ]) {
+    await page.locator('.workspace').evaluate((el, width) => {
+      const css = getComputedStyle(el);
+      el.style.inlineSize = `${width + parseFloat(css.paddingLeft) + parseFloat(css.paddingRight)}px`;
+    }, contentWidth);
+    await checkLayout('constrained-container', columns);
+  }
+  await page
+    .locator('.workspace')
+    .evaluate((el) => el.style.removeProperty('inline-size'));
+  // Relative budgets should follow text size. This is not browser zoom evidence.
+  await page.evaluate(() => (document.documentElement.style.fontSize = '20px'));
+  for (const [width, columns] of [
+    [1229, 2],
+    [1228, 1],
+    [320, 1],
+  ]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await checkLayout('larger-root-text', columns);
+  }
+  await page.evaluate(() =>
+    document.documentElement.style.removeProperty('font-size'),
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await checkLayout('restored-layout', 2);
   await page.getByLabel('Demo appearance').selectOption('b');
   await page.waitForFunction(
     () => document.documentElement.dataset.demoBrand === 'b',

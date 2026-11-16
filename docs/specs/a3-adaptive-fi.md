@@ -15,7 +15,7 @@ Build one fictional instrument capability in two independently runnable Angular 
 
 ## Non-goals and review
 
-No native host, Capacitor, broker integration, authentication, tenant isolation, repository rename, generic design system, broad migration or framework upgrade. Browser evidence says nothing about native safe areas, system back gestures or app stores. Prepare an unmerged PR; human review decides whether to keep this experiment. Do not label production readiness from a screenshot or passing unit tests.
+No native host, Capacitor, broker integration, authentication, tenant isolation, repository rename, complete design-system package, broad migration or framework upgrade. Browser evidence says nothing about native safe areas, system back gestures or app stores. Prepare an unmerged PR; human review decides whether to keep this experiment. Do not label production readiness from a screenshot or passing unit tests.
 
 See [decision](../decisions/ADR-A3-adaptive-fi.md), [validation](../validation/a3-adaptive-fi.md), and [guide](../guides/adaptive-fi.md).
 
@@ -26,3 +26,7 @@ Provide `/fi-preview` in the existing demo shell with Desktop web, Mobile web an
 ## Order-entry presentation follow-up
 
 Keep the desktop order-entry rail. On the Ionic browser app, Invest opens a full-page modal at phone and tablet widths. Reuse one controlled order-entry body and one local draft implementation through trading `feature`, `ui`, `data-access`, and `util` libraries. Close/Escape restore focus and preserve the raw amount; same-symbol retry retains it while invalidating the preview; instrument changes, route exit and reload reset it. Browser Back keeps normal route navigation. Verify theme inheritance after overlay relocation, background accessibility isolation, keyboard focus cycles, one modal/form/scroller, rapid interactions and route cleanup. No real order submission or native-device claim.
+
+## Design-system layout follow-up
+
+Publish generic research on layout ownership and implement the same contract in the demo. The design library owns shared container foundations and an adaptive content-with-aside Sass mixin; experiences supply region sizes and workflow presentation. Derive the content-fit threshold using the maximum aside width. Reuse the container primitive on the Ionic page and modal without changing scroll or session ownership. Check the boundary, constrained containers, enlarged text and short landscape layouts. Record measured results separately from native/accessibility limitations.

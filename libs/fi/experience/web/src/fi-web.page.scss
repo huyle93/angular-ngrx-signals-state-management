@@ -1,3 +1,5 @@
+@use '../../../design/src/layout';
+
 :host {
   display: block;
   min-height: 100vh;
@@ -8,7 +10,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  padding: 1.25rem clamp(1rem, 4vw, 3rem);
+  padding: 1.25rem var(--fi-page-gutter);
   border-bottom: 1px solid var(--fi-border);
   background: var(--fi-surface);
 }
@@ -32,10 +34,8 @@
   display: inline-block;
 }
 .workspace {
-  max-width: var(--fi-page-width);
-  margin: auto;
-  padding: clamp(1rem, 4vw, 3rem);
-  container-type: inline-size;
+  @include layout.page-container;
+  container: instrument-detail / inline-size;
 }
 .page-top {
   display: flex;
@@ -43,7 +43,7 @@
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--fi-gap);
 }
 .eyebrow {
   font-size: 0.7rem;
@@ -56,19 +56,12 @@
   margin: 0.25rem 0;
 }
 .fi-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--fi-gap);
-  align-items: start;
-}
-.fi-layout > * {
-  min-inline-size: 0;
-}
-/* 34rem chart + 19rem ticket + 1.5rem gap fit at 55rem of content. */
-@container (min-width:55rem) {
-  .fi-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(19rem, 21rem);
-  }
+  @include layout.content-with-aside(
+    $container: instrument-detail,
+    $main-min: 34rem,
+    $aside-min: 19rem,
+    $aside-max: 21rem
+  );
 }
 footer {
   margin-top: 2rem;

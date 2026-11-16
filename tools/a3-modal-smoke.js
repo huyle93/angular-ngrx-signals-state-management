@@ -41,6 +41,7 @@ async (page) => {
     [390, 844, 'a'],
     [320, 640, 'b'],
     [1024, 768, 'b'],
+    [844, 390, 'a'],
   ]) {
     await page.setViewportSize({ width, height });
     await page.getByLabel('Demo appearance').selectOption(brand);
@@ -69,6 +70,14 @@ async (page) => {
         bodyScroll: document.documentElement.scrollHeight > innerHeight,
         scrollWidth: scroll.scrollWidth,
         clientWidth: scroll.clientWidth,
+        scrollHeight: scroll.scrollHeight,
+        clientHeight: scroll.clientHeight,
+        pageContentWidth: document
+          .querySelector('.mobile-content')
+          .getBoundingClientRect().width,
+        formContentWidth: el
+          .querySelector('.order-body')
+          .getBoundingClientRect().width,
         formCount: document.querySelectorAll('app-order-entry').length,
       };
     });
@@ -91,6 +100,26 @@ async (page) => {
       geometry.scrollWidth === geometry.clientWidth && !geometry.bodyScroll,
       'Modal overflow ' + JSON.stringify(geometry),
     );
+    check(
+      geometry.pageContentWidth <= Math.min(width, 768) &&
+        geometry.formContentWidth <= Math.min(width, 640),
+      'Shared content width limits ' + JSON.stringify(geometry),
+    );
+    await amount().fill('42.00');
+    const preview = page.getByRole('button', { name: 'Preview demo amount' });
+    await preview.scrollIntoViewIfNeeded();
+    check(
+      await preview.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const content = el.closest('ion-content').getBoundingClientRect();
+        return box.top >= content.top && box.bottom <= content.bottom;
+      }),
+      'Preview action unreachable within the modal scroller',
+    );
+    await preview.click();
+    await page.getByText('No order was placed.', { exact: false }).waitFor();
+    await amount().fill('42.');
+    await amount().focus();
     check(
       geometry.bg === (brand === 'a' ? '#f4f6f2' : '#f3f2f8'),
       'Teleported theme lost ' + JSON.stringify(geometry),
