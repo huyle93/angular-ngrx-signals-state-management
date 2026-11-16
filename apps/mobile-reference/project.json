@@ -1,0 +1,85 @@
+{
+  "name": "mobile-reference",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/mobile-reference/src",
+  "tags": ["scope:fi", "type:app", "domain:composition"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/mobile-reference",
+        "browser": "apps/mobile-reference/src/main.ts",
+        "tsConfig": "apps/mobile-reference/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/mobile-reference/public"
+          }
+        ],
+        "styles": ["apps/mobile-reference/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "options": {
+        "port": 4300
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "mobile-reference:build:production"
+        },
+        "development": {
+          "buildTarget": "mobile-reference:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "mobile-reference:build",
+        "port": 4300,
+        "staticFilePath": "dist/apps/mobile-reference/browser",
+        "spa": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "apps/mobile-reference/**/*.ts",
+          "apps/mobile-reference/**/*.html"
+        ]
+      }
+    }
+  }
+}

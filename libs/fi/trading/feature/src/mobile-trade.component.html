@@ -1,0 +1,57 @@
+<button
+  #invest
+  class="invest"
+  type="button"
+  [disabled]="!draft.view() || active()"
+  [attr.aria-describedby]="!draft.view() ? 'trade-availability' : null"
+  (click)="open()"
+>
+  Invest (demo)
+</button>
+@if (!draft.view()) {
+  <p id="trade-availability" class="availability">
+    A synthetic price is needed to preview an amount.
+  </p>
+}
+<p class="open-status" role="status">
+  @if (openError()) {
+    Unable to open demo order entry. Try Invest again.
+  }
+</p>
+<!-- Ionic moves this element under ion-app. Keep its theme and sizing on the overlay itself. -->
+<ion-modal
+  class="fi-theme order-modal"
+  aria-label="Demo order entry"
+  (didPresent)="presented()"
+  (didDismiss)="dismissed()"
+  (keydown)="wrapTab($event)"
+>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <div class="order-toolbar">
+          <h1 id="order-modal-title">Demo order entry</h1>
+          <button
+            class="close"
+            type="button"
+            (click)="dismiss()"
+            aria-label="Close demo order entry"
+          >
+            Close
+          </button>
+        </div>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <div class="order-body">
+        @if (draft.view(); as view) {
+          <app-order-entry
+            [view]="view"
+            (amountChange)="draft.updateAmount($event)"
+            (reviewRequested)="draft.review()"
+          />
+        }
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

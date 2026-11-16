@@ -1,13 +1,10 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { RouterModule } from '@angular/router';
-
+import { RouterOutlet } from '@angular/router';
 @Component({
   selector: 'app-root',
-  imports: [RouterModule],
-  templateUrl: './app.html',
-  styleUrl: './app.scss',
+  standalone: true,
+  imports: [RouterOutlet],
+  template: '<router-outlet />',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {
-  protected readonly title = 'Angular NgRx Signals State Management';
-}
+export class App {}

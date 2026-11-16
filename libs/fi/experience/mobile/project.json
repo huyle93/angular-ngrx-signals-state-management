@@ -1,0 +1,20 @@
+{
+  "name": "fi-mobile",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/fi/experience/mobile/src",
+  "prefix": "lib",
+  "tags": ["scope:fi", "type:experience", "domain:composition"],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project fi-mobile --web",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/fi/experience/mobile/**/*.ts",
+          "libs/fi/experience/mobile/**/*.html"
+        ]
+      }
+    }
+  }
+}

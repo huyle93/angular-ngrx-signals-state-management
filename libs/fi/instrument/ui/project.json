@@ -1,0 +1,20 @@
+{
+  "name": "instrument-ui",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/fi/instrument/ui/src",
+  "prefix": "lib",
+  "tags": ["scope:fi", "type:ui", "domain:instrument"],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project instrument-ui --web",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/fi/instrument/ui/**/*.ts",
+          "libs/fi/instrument/ui/**/*.html"
+        ]
+      }
+    }
+  }
+}

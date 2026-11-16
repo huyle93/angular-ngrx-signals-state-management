@@ -6,6 +6,18 @@
 
 This is an Nx workspace that demonstrates state management in Angular using NgRx with Signals. This repository serves the purpose of experimental, educational, demo playground for exploring state management techniques, best-practices, and patterns in Angular applications.
 
+## Adaptive instrument detail POC
+
+The A3 example shares NgRx SignalStore, synthetic instrument UI and a local demo trade capability between web and an Ionic browser reference. It has two semantic themes and container-aware web composition. It does not connect to markets, accounts or a native host.
+
+```sh
+npm ci
+npx nx serve web-app --port=4200
+npx nx serve mobile-reference --port=4300  # separate terminal
+```
+
+Open `/fi/LUMA` on either app. Use `?brand=b` for the second appearance. See the [run and learning guide](docs/guides/adaptive-fi.md), [architecture decision](docs/decisions/ADR-A3-adaptive-fi.md), and [validation evidence](docs/validation/a3-adaptive-fi.md).
+
 ## Workspace Structure
 
 This project uses [Nx](https://nx.dev) for monorepo management with the following structure:
@@ -50,9 +62,7 @@ angular-ngrx-signals-state-management/
 │   ├── guides/                        # Step-by-step tutorials
 │   ├── patterns/                      # State management patterns
 │   └── decisions/                     # Architectural Decision Records
-├── libs/                              # Shared libraries (planned)
-│   ├── web-app/                       # Shared code for web-app
-│   └── mobile-app/                    # Shared code for mobile-app
+├── libs/fi/                           # Shared instrument, trading, design and experiences
 ├── node_modules/                      # Dependencies
 ├── .gitignore                         # Git ignore rules
 ├── nx.json                            # Nx workspace configuration
@@ -69,7 +79,7 @@ angular-ngrx-signals-state-management/
 - **apps/**: Application projects (web, mobile) - each app is independently deployable
 - **apps/web-app/src/app/**: Angular components and application logic
 - **docs/**: Human-readable documentation - concepts, guides, patterns, and architectural decisions
-- **libs/**: Shared libraries and reusable code organized by application (planned)
+- **libs/fi/**: Shared FI capability, trading draft, design tokens and web/mobile compositions
 
 **File Types:**
 
@@ -112,12 +122,14 @@ angular-ngrx-signals-state-management/
 ### Key Features
 
 ✨ **Modern Angular Patterns**
+
 - Standalone components (no NgModules)
 - OnPush change detection strategy
 - Modern control flow syntax (`@if`, `@for`, `@switch`)
 - Signal-based reactivity
 
 ✨ **Developer Experience**
+
 - Angular CLI MCP server integration
 - Fast builds with esbuild
 - Instant test feedback with Vitest
@@ -167,6 +179,7 @@ Desktop web application demonstrating modern Angular state management patterns:
 - **Todo App**: Complex state management with multiple coordinated signals
 
 **Features:**
+
 - Zoneless change detection
 - Signal-based reactivity
 - OnPush strategy on all components
@@ -177,6 +190,7 @@ Desktop web application demonstrating modern Angular state management patterns:
 ## Current Status
 
 ✅ **Completed:**
+
 - Nx workspace initialized
 - web-app with three demo pages
 - Signal-based state management examples
@@ -185,10 +199,12 @@ Desktop web application demonstrating modern Angular state management patterns:
 - Modern build pipeline with esbuild
 
 🚧 **In Progress:**
+
 - Writing unit tests for components
 - Adding NgRx Store examples
 
 📋 **Planned:**
+
 - NgRx Store integration
 - Shared state libraries
 - Advanced state patterns

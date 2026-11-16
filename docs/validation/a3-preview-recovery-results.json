@@ -1,0 +1,16 @@
+{
+  "stopped": {
+    "instructions": true,
+    "frameSrc": "http://localhost:4300/fi/LUMA?previewRevision=0",
+    "frameUrls": [
+      "http://localhost:4200/fi-preview",
+      "chrome-error://chromewebdata/"
+    ],
+    "observedError": true
+  },
+  "afterStartingMobileServerAndReload": {
+    "recoveredRealApp": true,
+    "source": "http://localhost:4300/fi/LUMA?previewRevision=1",
+    "ionicContent": 1
+  }
+}

@@ -1,0 +1,63 @@
+:host {
+  --background: var(--fi-bg);
+}
+ion-content {
+  --background: var(--fi-bg);
+}
+.mobile-toolbar {
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.mobile-toolbar strong {
+  font-size: 1rem;
+}
+.mobile-toolbar span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--fi-muted);
+}
+.mobile-content {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1rem;
+  min-width: 0;
+}
+.page-top {
+  margin-bottom: 1.5rem;
+}
+.page-top p {
+  margin-top: 0;
+}
+.mobile-trade {
+  display: block;
+  margin-top: 1.5rem;
+}
+footer {
+  padding: 1rem 0 2rem;
+}
+nav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--fi-border);
+  border-radius: 100px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+nav a[aria-current='page'] {
+  color: var(--fi-on-action);
+  background: var(--fi-action);
+  border-color: var(--fi-action);
+}

@@ -1,0 +1,61 @@
+<ion-header
+  ><ion-toolbar
+    ><div class="mobile-toolbar">
+      <strong>◒ Fieldnotes <span>mobile reference</span></strong
+      ><app-theme-picker /></div></ion-toolbar
+></ion-header>
+<ion-content
+  ><div class="mobile-content">
+    <div class="page-top">
+      <p class="fi-note">Discover a fictional idea</p>
+      <nav aria-label="Synthetic instruments">
+        <a
+          routerLink="/fi/LUMA"
+          [attr.aria-current]="store.symbol() === 'LUMA' ? 'page' : null"
+          >LUMA</a
+        ><a
+          routerLink="/fi/TIDE"
+          [attr.aria-current]="store.symbol() === 'TIDE' ? 'page' : null"
+          >TIDE</a
+        >
+      </nav>
+    </div>
+    <app-instrument-status
+      [status]="store.status()"
+      [symbol]="store.symbol()"
+      [error]="store.error()"
+      (retry)="store.load(store.symbol())"
+    />
+    @if (store.instrument(); as instrument) { @if (store.stats(); as stats) {
+    <div class="fi-stack">
+      <app-instrument-overview
+        class="fi-card"
+        [instrument]="instrument"
+        [stats]="stats"
+      />
+      <app-instrument-chart
+        class="fi-card"
+        [series]="store.series()"
+        [range]="store.range()"
+        (rangeChange)="store.setRange($event)"
+      />
+      <app-instrument-details
+        class="fi-card"
+        [instrument]="instrument"
+        [stats]="stats"
+      />
+    </div>
+    }}
+    <app-mobile-trade
+      class="mobile-trade"
+      [symbol]="store.symbol()"
+      [price]="store.stats()?.price ?? null"
+    />
+    <footer>
+      <p class="fi-note">
+        Synthetic data. No brokerage service.<br />Browser reference · no native
+        host.
+      </p>
+      <app-demo-scenarios (scenario)="store.load(store.symbol(), $event)" />
+    </footer></div
+></ion-content>

@@ -53,3 +53,4 @@ external-context/
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+.playwright-cli/

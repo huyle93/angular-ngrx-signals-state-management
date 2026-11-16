@@ -1,0 +1,20 @@
+{
+  "name": "fi-web",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/fi/experience/web/src",
+  "prefix": "lib",
+  "tags": ["scope:fi", "type:experience", "domain:composition"],
+  "projectType": "library",
+  "// targets": "to see all targets run: nx show project fi-web --web",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "libs/fi/experience/web/**/*.ts",
+          "libs/fi/experience/web/**/*.html"
+        ]
+      }
+    }
+  }
+}

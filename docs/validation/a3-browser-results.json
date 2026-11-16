@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "resize",
+    "width": 1440,
+    "scroll": 1440,
+    "columns": "824px 336px",
+    "chart": true,
+    "ticket": true,
+    "charts": 1,
+    "tickets": 1,
+    "range": "3M",
+    "amount": "125."
+  },
+  {
+    "kind": "resize",
+    "width": 768,
+    "scroll": 768,
+    "columns": "706.562px",
+    "chart": true,
+    "ticket": true,
+    "charts": 1,
+    "tickets": 1,
+    "range": "3M",
+    "amount": "125."
+  },
+  {
+    "kind": "resize",
+    "width": 320,
+    "scroll": 320,
+    "columns": "288px",
+    "chart": true,
+    "ticket": true,
+    "charts": 1,
+    "tickets": 1,
+    "range": "3M",
+    "amount": "125."
+  },
+  {
+    "kind": "resize",
+    "width": 1440,
+    "scroll": 1440,
+    "columns": "824px 336px",
+    "chart": true,
+    "ticket": true,
+    "charts": 1,
+    "tickets": 1,
+    "range": "3M",
+    "amount": "125."
+  },
+  {
+    "kind": "contrast",
+    "brand": "a",
+    "text": 13.424457038170729,
+    "muted": 5.794422857085961,
+    "action": 7.855391290946377,
+    "focus": 6.946183360563152,
+    "error": 7.475072643851125
+  },
+  {
+    "kind": "contrast",
+    "brand": "b",
+    "text": 13.64757019541427,
+    "muted": 5.886530874952262,
+    "action": 8.757922888438898,
+    "focus": 7.191460038502971,
+    "error": 7.475072643851125
+  },
+  {
+    "kind": "web",
+    "themeContinuity": true,
+    "preview": true,
+    "emptyErrorRetry": true,
+    "retryFocus": true,
+    "staleCancellation": true,
+    "backReload": true,
+    "unknownSymbol": true
+  },
+  {
+    "kind": "preserved-route",
+    "route": "/"
+  },
+  {
+    "kind": "preserved-route",
+    "route": "/counter"
+  },
+  {
+    "kind": "preserved-route",
+    "route": "/todo"
+  },
+  {
+    "kind": "preserved-route",
+    "route": "/ticker"
+  },
+  {
+    "kind": "preserved-route",
+    "route": "/trade-entry"
+  },
+  {
+    "kind": "mobile",
+    "width": 320,
+    "documentWidth": 320,
+    "contentWidth": 320,
+    "scrollWidth": 320,
+    "bodyScroll": false,
+    "scrollOwner": false,
+    "charts": 1,
+    "tickets": 1,
+    "retryFocus": true,
+    "keyboardOpen": true,
+    "focusReturn": true,
+    "draftContinuity": true
+  },
+  {
+    "kind": "mobile-page-after-dismiss",
+    "scrollOwner": true,
+    "bodyScroll": false,
+    "scrollWidth": 320,
+    "clientWidth": 320
+  },
+  {
+    "kind": "runtime-errors",
+    "errors": []
+  }
+]

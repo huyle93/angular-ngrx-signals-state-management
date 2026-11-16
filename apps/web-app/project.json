@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/web-app/src",
-  "tags": [],
+  "tags": ["scope:fi", "type:app", "domain:composition"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -60,7 +60,10 @@
       "defaultConfiguration": "development"
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["apps/web-app/**/*.ts", "apps/web-app/**/*.html"]
+      }
     },
     "serve-static": {
       "continuous": true,
@@ -70,6 +73,36 @@
         "staticFilePath": "dist/apps/web-app/browser",
         "spa": true
       }
+    },
+    "browser-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/run-a3-browser-smoke.cjs"
+      },
+      "cache": false
+    },
+    "serve-fi-demo": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "cache": false,
+      "options": {
+        "command": "nx run-many -t serve -p web-app,mobile-reference --parallel=2",
+        "forwardAllArgs": false
+      }
+    },
+    "preview-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/run-a3-browser-smoke.cjs tools/a3-preview-smoke.js"
+      },
+      "cache": false
+    },
+    "modal-smoke": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tools/run-a3-browser-smoke.cjs tools/a3-modal-smoke.js"
+      },
+      "cache": false
     }
   }
 }

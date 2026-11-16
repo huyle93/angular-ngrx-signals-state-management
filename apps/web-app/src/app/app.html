@@ -2,18 +2,26 @@
   <header class="app-header">
     <h1>{{ title }}</h1>
     <nav class="app-nav">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
+      <a
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{exact: true}"
+        >Home</a
+      >
       <a routerLink="/counter" routerLinkActive="active">Counter (Signals)</a>
       <a routerLink="/todo" routerLinkActive="active">Todo (State)</a>
       <a routerLink="/ticker" routerLinkActive="active">Ticker (Odometer)</a>
-      <a routerLink="/trade-entry" routerLinkActive="active">Trade Entry (Stack)</a>
+      <a routerLink="/trade-entry" routerLinkActive="active"
+        >Trade Entry (Stack)</a
+      >
+      <a routerLink="/fi-preview" routerLinkActive="active">Adaptive FI</a>
     </nav>
   </header>
-  
+
   <main class="app-main">
     <router-outlet />
   </main>
-  
+
   <footer class="app-footer">
     <p>Demo playground for exploring state management patterns in Angular</p>
   </footer>
