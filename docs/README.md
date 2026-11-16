@@ -38,8 +38,9 @@ Step-by-step tutorials and how-to guides:
 
 ### 🎯 [Patterns](./patterns/)
 
-State management patterns and best practices:
+Architecture and state management patterns:
 
+- [Adaptive mobile and desktop experiences](patterns/adaptive-mobile-desktop-experiences.md): shared capabilities, modal/rail presentation, layout choices and lifecycle lessons
 - Local component state patterns
 - Shared state patterns (planned with NgRx Store)
 - Signal composition patterns
